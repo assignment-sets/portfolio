@@ -39,7 +39,8 @@ export const portfolioData: PortfolioData = {
   email: "gourab.m099@gmail.com",
   github: "https://github.com/assignment-sets",
   linkedin: "https://linkedin.com/in/gourab-mondal-gm2004",
-  resumeUrl: "https://my-resumes-788125169240-ap-south-1-an.s3.ap-south-1.amazonaws.com/resume.pdf",
+  resumeUrl:
+    "https://my-resumes-788125169240-ap-south-1-an.s3.ap-south-1.amazonaws.com/resume.pdf",
 
   skills: [
     { label: "Languages", value: "Python, Java, JavaScript" },
@@ -70,28 +71,54 @@ export const portfolioData: PortfolioData = {
       title: "Road Damage Monitoring",
       description:
         "YOLOv8m-driven backend that detects and classifies road surface degradation, calculating a deterministic priority score via a custom Road Damage Index to streamline high-severity municipal alerts.",
-      tags: ["Python", "FastAPI", "Ultralytics", "YOLOv8", "RDD2020", "Google Maps API"],
-      githubUrl: "https://github.com/assignment-sets/road-surface-damage-monitoring",
+      tags: [
+        "Python",
+        "FastAPI",
+        "Ultralytics",
+        "YOLOv8",
+        "RDD2020",
+        "Google Maps API",
+      ],
+      githubUrl:
+        "https://github.com/assignment-sets/road-surface-damage-monitoring",
     },
     {
-      title: "n8n MCP Self-Healer",
+      title: "N8N MCP Self-Healer",
       description:
-        "Agentic workflow using n8n and Elasticsearch that reasons over logs and stack traces to create GitHub issues, notifies teams via Slack blocks, and tries to self-heal the codebase using a subagent.",
-      tags: ["Elasticsearch", "MCP", "Filebeat", "n8n", "Agent"],
-      githubUrl: "https://github.com/assignment-sets/error-monitoring-agent-n8n",
+        "Agentic workflow using N8N and Elasticsearch that reasons over logs and stack traces to create GitHub issues, notifies teams via Slack blocks, and tries to self-heal the codebase using a subagent.",
+      tags: ["Elasticsearch", "MCP", "Filebeat", "N8N", "Agent"],
+      githubUrl:
+        "https://github.com/assignment-sets/error-monitoring-agent-N8N",
     },
     {
       title: "DocUtil AI",
       description:
         "AI platform that automates prompt-driven document processing using an agent-based workflow.",
-      tags: ["Python", "LangGraph", "React", "Gemini", "FastAPI", "Docker", "MCP", "Redis"],
+      tags: [
+        "Python",
+        "LangGraph",
+        "React",
+        "Gemini",
+        "FastAPI",
+        "Docker",
+        "MCP",
+        "Redis",
+      ],
       githubUrl: "https://github.com/assignment-sets/docAgentAI",
     },
     {
       title: "Medical RAG",
       description:
         "Verified medical info retrieval using Langchain, Pinecone vector DB, and domain-specific LLM streams.",
-      tags: ["Python", "Pinecone", "Langchain", "Gemini API", "FastAPI", "Redis", "Celery"],
+      tags: [
+        "Python",
+        "Pinecone",
+        "Langchain",
+        "Gemini API",
+        "FastAPI",
+        "Redis",
+        "Celery",
+      ],
       githubUrl: "https://github.com/assignment-sets/general-medical-rag",
     },
   ],

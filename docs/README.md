@@ -1,0 +1,50 @@
+# Engineering Documentation
+
+Welcome to the technical documentation for the Gourab Mondal portfolio and web platform.
+
+This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and **Tailwind CSS v4**. Beyond delivering a fast, responsive visual experience for human visitors, it implements first-class **AI / LLM UX** capabilities to serve AI models, agents, and scrapers with high-density, token-efficient Markdown representations.
+
+---
+
+## Documentation Index
+
+### AI / LLM UX
+
+- [**Root `/llms.txt` Endpoint**](ai-ux/llms-txt.md)
+  - Details the dedicated `/llms.txt` standard route, dynamic data synthesis from `data/portfolio.ts`, crawler discovery tags, and sitemap integration.
+- [**Markdown Content Negotiation (RFC 9110)**](ai-ux/markdown-content-negotiation.md)
+  - Details the edge content negotiation architecture powered by Next.js 16 `proxy.ts`, RFC 9110 `Accept` parsing, and on-the-fly SSR DOM-to-Markdown compilation via `node-html-markdown`.
+
+---
+
+## Quick Testing Cheatsheet
+
+### 1. Test `/llms.txt` Endpoint
+
+```bash
+curl -i http://localhost:3000/llms.txt
+```
+
+### 2. Test Human Browser SSR Interface
+
+```bash
+curl -i -H "Accept: text/html" http://localhost:3000/
+```
+
+### 3. Test AI Agent Markdown Content Negotiation
+
+```bash
+curl -i -H "Accept: text/markdown" http://localhost:3000/
+```
+
+### 4. Test Weighted Crawler Preferences
+
+```bash
+curl -i -H "Accept: text/markdown, text/html;q=0.9" http://localhost:3000/
+```
+
+### 5. Test Explicit `.md` Path
+
+```bash
+curl -i http://localhost:3000/index.md
+```

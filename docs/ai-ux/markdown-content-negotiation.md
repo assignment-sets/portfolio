@@ -67,6 +67,12 @@
   - Extracts the `<main>` content container.
   - Drops `<nav>`, `<footer>`, `<script>`, `<style>`, `<noscript>`, and inline `<svg>` code.
   - Removes interactive buttons (theme toggle) and form shells.
+- **Semantic DOM Preprocessor (`preprocessHtmlForMarkdown`)**:
+  - **Inline Tag Spacing**: Converts inline tag spans in `.project-tags` into spaced backtick code pills (`` `Java` `FastAPI` `Postgresql` ``).
+  - **Structured Skill Lists**: Transforms `.skill-row` spans into semantic markdown unordered lists (`- **Languages**: Python, Java, JavaScript`).
+  - **Separators for Links**: Inserts middle-dot ` · ` separators between consecutive `<a>` links in `.hero-links`.
+  - **Project Metadata & Licenses**: Preserves repository licenses (e.g. `### Title `MIT``) and formats footer timestamps (`[GitHub →](...) · *Updated Aug 2026*`).
+  - **Education**: Transforms education timelines into clean bulleted items.
 - **Compilation Engine**: Uses `node-html-markdown` to convert the semantic HTML into clean Markdown.
 - **Future-Proof**: Whenever future dynamic pages (e.g. blogs, newsletters, database items) are added to the application, they automatically inherit Markdown negotiation without writing any custom parsers.
 

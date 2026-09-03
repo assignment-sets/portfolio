@@ -26,14 +26,11 @@ export default function ContactForm() {
     setStatus({ message: "", type: "" });
 
     try {
-      const res = await fetch(
-        "https://portfolio-nodemailer-api.vercel.app/send-email",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, subject, message }),
-        }
-      );
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, subject, message }),
+      });
 
       if (res.ok) {
         setStatus({

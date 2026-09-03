@@ -67,6 +67,12 @@ export default function RootLayout({
           href="/llms.txt"
           title="LLMs.txt"
         />
+        <link
+          rel="alternate"
+          type="text/markdown"
+          href="/"
+          title="Markdown representation"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -15,6 +15,12 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 - [**Markdown Content Negotiation (RFC 9110)**](ai-ux/markdown-content-negotiation.md)
   - Details the edge content negotiation architecture powered by Next.js 16 `proxy.ts`, RFC 9110 `Accept` parsing, and on-the-fly SSR DOM-to-Markdown compilation via `node-html-markdown`.
 
+### Fullstack APIs
+
+- [**Contact Email Route (`/api/send-email`)**](api/contact-email.md)
+  - Details the native Next.js 16 Route Handler, Zod validation, HTML sanitization, Nodemailer SMTP with `replyTo` support, and in-memory IP rate limiting.
+
+
 ---
 
 ## Quick Testing Cheatsheet

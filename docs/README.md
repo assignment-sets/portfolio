@@ -25,6 +25,11 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 - [**Google Analytics 4 & Custom Event Tracking**](analytics/event-tracking.md)
   - Details the official `@next/third-parties/google` integration, ad-blocker resilient dispatch architecture, and the complete event catalog (resume clicks, project interest, form submits, theme preferences).
 
+### Dynamic Data Layer
+
+- [**Dynamic GitHub Repositories & ISR Caching**](data/github-integration.md)
+  - Details the server-side GitHub REST API integration, Incremental Static Regeneration (1h background sync), tag casing normalization, and silent static fallback architecture.
+
 ---
 
 ## Quick Testing Cheatsheet

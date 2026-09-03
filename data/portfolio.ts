@@ -8,7 +8,19 @@ export interface Project {
   description: string;
   tags: string[];
   githubUrl: string;
+  language?: string | null;
+  license?: string | null;
+  pushedAt?: string | null;
 }
+
+export const pinnedRepoNames: string[] = [
+  "payment_sys",
+  "audio-saas-backend",
+  "monolithic-cicd-pipeline",
+  "secretMan",
+  "road-surface-damage-monitoring",
+  "docAgentAI",
+];
 
 export interface EducationItem {
   period: string;

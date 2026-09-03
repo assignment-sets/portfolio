@@ -6,20 +6,23 @@ import Experience from "@/components/Experience";
 import Education from "@/components/Education";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import { getFeaturedProjects } from "@/lib/github";
 
-export default function Home() {
+export default async function Home() {
+  const projects = await getFeaturedProjects();
+
   return (
     <>
       <Navbar />
       <main className="wrap">
         <Hero />
         <Skills />
-        <Projects />
+        <Projects projects={projects} />
         <Experience />
         <Education />
         <Contact />
       </main>
-      <Footer />
+      <Footer projects={projects} />
     </>
   );
 }

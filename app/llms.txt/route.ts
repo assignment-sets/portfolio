@@ -1,6 +1,7 @@
-import { portfolioData } from "@/data/portfolio";
+import { portfolioData, type Project } from "@/data/portfolio";
+import { getFeaturedProjects } from "@/lib/github";
 
-function generateLlmsTxt(): string {
+function generateLlmsTxt(projects: Project[]): string {
   const lines: string[] = [];
 
   // Title & Bio
@@ -33,13 +34,16 @@ function generateLlmsTxt(): string {
   // Featured Projects
   lines.push("## Featured Projects");
   lines.push("");
-  for (const project of portfolioData.projects) {
+  for (const project of projects) {
     lines.push(`### [${project.title}](${project.githubUrl})`);
     lines.push("");
     lines.push(project.description);
     lines.push("");
     lines.push(`- **Stack**: ${project.tags.join(", ")}`);
     lines.push(`- **Repository**: ${project.githubUrl}`);
+    if (project.license) {
+      lines.push(`- **License**: ${project.license}`);
+    }
     lines.push("");
   }
 
@@ -57,7 +61,8 @@ function generateLlmsTxt(): string {
 }
 
 export async function GET() {
-  const content = generateLlmsTxt();
+  const projects = await getFeaturedProjects();
+  const content = generateLlmsTxt(projects);
 
   return new Response(content, {
     headers: {

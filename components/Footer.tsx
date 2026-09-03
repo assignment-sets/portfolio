@@ -11,9 +11,18 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { portfolioData } from "@/data/portfolio";
+import type { Project } from "@/data/portfolio";
 import { trackEvent } from "@/lib/analytics";
 
-export default function Footer() {
+interface FooterProps {
+  projects?: Project[];
+}
+
+export default function Footer({
+  projects = portfolioData.projects,
+}: FooterProps) {
+  const displayProjects =
+    projects && projects.length > 0 ? projects : portfolioData.projects;
   return (
     <footer>
       <div className="footer-inner">
@@ -154,7 +163,7 @@ export default function Footer() {
           <div>
             <h4 className="footer-col-title">Featured Code</h4>
             <ul className="footer-links">
-              {portfolioData.projects.slice(0, 4).map((project) => (
+              {displayProjects.slice(0, 4).map((project) => (
                 <li key={project.title}>
                   <a
                     href={project.githubUrl}

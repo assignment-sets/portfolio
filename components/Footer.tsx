@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   Mail,
@@ -9,6 +11,7 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { portfolioData } from "@/data/portfolio";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Footer() {
   return (
@@ -33,6 +36,12 @@ export default function Footer() {
                 className="footer-social-btn"
                 aria-label="GitHub Profile"
                 title="GitHub Profile"
+                onClick={() =>
+                  trackEvent("social_click", {
+                    platform: "github",
+                    location: "footer",
+                  })
+                }
               >
                 <svg
                   width="16"
@@ -55,6 +64,12 @@ export default function Footer() {
                 className="footer-social-btn"
                 aria-label="LinkedIn Profile"
                 title="LinkedIn Profile"
+                onClick={() =>
+                  trackEvent("social_click", {
+                    platform: "linkedin",
+                    location: "footer",
+                  })
+                }
               >
                 <svg
                   width="16"
@@ -76,6 +91,9 @@ export default function Footer() {
                 className="footer-social-btn"
                 aria-label="Email Me"
                 title="Email Me"
+                onClick={() =>
+                  trackEvent("email_click", { location: "footer" })
+                }
               >
                 <Mail size={16} />
               </a>
@@ -86,6 +104,9 @@ export default function Footer() {
                 className="footer-social-btn"
                 aria-label="Download Resume"
                 title="Download Resume"
+                onClick={() =>
+                  trackEvent("resume_click", { location: "footer" })
+                }
               >
                 <FileText size={16} />
               </a>
@@ -140,6 +161,12 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="footer-link"
+                    onClick={() =>
+                      trackEvent("project_click", {
+                        project_name: project.title,
+                        location: "footer",
+                      })
+                    }
                   >
                     <span>{project.title}</span>
                     <ArrowUpRight size={13} className="footer-link-icon" />
@@ -153,6 +180,12 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   className="footer-link"
                   style={{ marginTop: "4px" }}
+                  onClick={() =>
+                    trackEvent("project_click", {
+                      project_name: "all_repositories",
+                      location: "footer",
+                    })
+                  }
                 >
                   <span>All Repositories &rarr;</span>
                 </a>
@@ -168,6 +201,9 @@ export default function Footer() {
                 <a
                   href={`mailto:${portfolioData.email}`}
                   className="footer-link"
+                  onClick={() =>
+                    trackEvent("email_click", { location: "footer_text" })
+                  }
                 >
                   <Mail size={14} className="footer-link-icon" />
                   <span>{portfolioData.email}</span>
@@ -180,13 +216,25 @@ export default function Footer() {
                 </span>
               </li>
               <li>
-                <a href="/llms.txt" className="footer-link">
+                <a
+                  href="/llms.txt"
+                  className="footer-link"
+                  onClick={() =>
+                    trackEvent("protocol_click", { target: "llms.txt" })
+                  }
+                >
                   <Bot size={14} className="footer-link-icon" />
                   <span>llms.txt (Agent Feed)</span>
                 </a>
               </li>
               <li>
-                <a href="/sitemap.xml" className="footer-link">
+                <a
+                  href="/sitemap.xml"
+                  className="footer-link"
+                  onClick={() =>
+                    trackEvent("protocol_click", { target: "sitemap" })
+                  }
+                >
                   <Compass size={14} className="footer-link-icon" />
                   <span>Sitemap XML</span>
                 </a>

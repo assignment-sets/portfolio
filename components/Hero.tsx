@@ -1,4 +1,7 @@
+"use client";
+
 import { portfolioData } from "@/data/portfolio";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Hero() {
   return (
@@ -9,14 +12,44 @@ export default function Hero() {
       <p className="hero-location">{portfolioData.location}</p>
       <p className="hero-bio">{portfolioData.bio}</p>
       <div className="hero-links">
-        <a href={`mailto:${portfolioData.email}`}>Email</a>
-        <a href={portfolioData.github} target="_blank" rel="noopener noreferrer">
+        <a
+          href={`mailto:${portfolioData.email}`}
+          onClick={() => trackEvent("email_click", { location: "hero" })}
+        >
+          Email
+        </a>
+        <a
+          href={portfolioData.github}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() =>
+            trackEvent("social_click", {
+              platform: "github",
+              location: "hero",
+            })
+          }
+        >
           GitHub
         </a>
-        <a href={portfolioData.linkedin} target="_blank" rel="noopener noreferrer">
+        <a
+          href={portfolioData.linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() =>
+            trackEvent("social_click", {
+              platform: "linkedin",
+              location: "hero",
+            })
+          }
+        >
           LinkedIn
         </a>
-        <a href={portfolioData.resumeUrl} target="_blank" rel="noopener noreferrer">
+        <a
+          href={portfolioData.resumeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent("resume_click", { location: "hero" })}
+        >
           Resume &darr;
         </a>
       </div>

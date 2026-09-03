@@ -1,4 +1,7 @@
+"use client";
+
 import { portfolioData } from "@/data/portfolio";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Projects() {
   return (
@@ -18,6 +21,12 @@ export default function Projects() {
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() =>
+                trackEvent("project_click", {
+                  project_name: project.title,
+                  url: project.githubUrl,
+                })
+              }
             >
               GitHub &rarr;
             </a>
@@ -29,6 +38,12 @@ export default function Projects() {
           href={`${portfolioData.github}?tab=repositories`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() =>
+            trackEvent("project_click", {
+              project_name: "all_repositories",
+              url: `${portfolioData.github}?tab=repositories`,
+            })
+          }
         >
           see more on GitHub &rarr;
         </a>

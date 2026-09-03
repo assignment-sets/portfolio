@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 export default function ThemeToggle() {
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function ThemeToggle() {
     const nextTheme = currentTheme === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", nextTheme);
     localStorage.setItem("theme", nextTheme);
+    trackEvent("theme_toggle", { new_theme: nextTheme });
   };
 
   return (

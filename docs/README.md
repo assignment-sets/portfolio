@@ -20,6 +20,10 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 - [**Contact Email Route (`/api/send-email`)**](api/contact-email.md)
   - Details the native Next.js 16 Route Handler, Zod validation, HTML sanitization, Nodemailer SMTP with `replyTo` support, and in-memory IP rate limiting.
 
+### Analytics & Observability
+
+- [**Google Analytics 4 & Custom Event Tracking**](analytics/event-tracking.md)
+  - Details the official `@next/third-parties/google` integration, ad-blocker resilient dispatch architecture, and the complete event catalog (resume clicks, project interest, form submits, theme preferences).
 
 ---
 

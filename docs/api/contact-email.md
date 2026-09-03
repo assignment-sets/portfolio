@@ -30,7 +30,7 @@ sequenceDiagram
             Route->>Route: HTML Escape (XSS sanitization)
             Route->>SMTP: sendMail(from, to, replyTo, html)
             SMTP-->>Inbox: Formatted notification email delivered
-            Route-->>Visitor: HTTP 200 OK {"success": true}
+            Route-->>Visitor: HTTP 200 OK (success)
         end
     end
 ```

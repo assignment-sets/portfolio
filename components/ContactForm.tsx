@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,12 +34,14 @@ export default function ContactForm() {
       });
 
       if (res.ok) {
+        trackEvent("contact_form_submit", { status: "success" });
         setStatus({
           message: "Sent. I'll get back to you.",
           type: "ok",
         });
         form.reset();
       } else {
+        trackEvent("contact_form_submit", { status: "error" });
         const data = await res.json().catch(() => ({}));
         setStatus({
           message:
@@ -47,6 +50,7 @@ export default function ContactForm() {
         });
       }
     } catch {
+      trackEvent("contact_form_submit", { status: "network_error" });
       setStatus({
         message: "Failed to send. Email me directly.",
         type: "err",

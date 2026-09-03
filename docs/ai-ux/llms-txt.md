@@ -11,6 +11,7 @@ Rather than forcing LLM crawlers to fetch bloated HTML files, execute JavaScript
 ## Architectural Design
 
 ### Single Source of Truth
+
 Instead of serving a static text file in `public/llms.txt` (which would require manual updates whenever a skill or project changes), the endpoint is implemented as an **App Router Route Handler** in [`app/llms.txt/route.ts`](../../app/llms.txt/route.ts).
 
 ```
@@ -38,6 +39,7 @@ Whenever projects, skills, or bios are updated in [`data/portfolio.ts`](../../da
 ## Technical Implementation
 
 ### 1. Route Handler: [`app/llms.txt/route.ts`](../../app/llms.txt/route.ts)
+
 - **Path**: Serves at `https://gourabmondal.vercel.app/llms.txt` (root URL, not under `/api/`).
 - **Headers**:
   - `Content-Type: text/plain; charset=utf-8`
@@ -51,6 +53,7 @@ Whenever projects, skills, or bios are updated in [`data/portfolio.ts`](../../da
   6. `## Education` (Degree, institutions, timeline, grades)
 
 ### 2. Search Engine & Discovery Integration
+
 - **XML Sitemap ([`app/sitemap.ts`](../../app/sitemap.ts))**:
   ```ts
   {
@@ -70,14 +73,17 @@ Whenever projects, skills, or bios are updated in [`data/portfolio.ts`](../../da
 ## Verification & Testing
 
 ### Request Command
+
 ```bash
 curl -s -i http://localhost:3000/llms.txt
 ```
 
 ### Expected Response
+
 - **Status**: `200 OK`
 - **Content-Type**: `text/plain; charset=utf-8`
 - **Sample Output**:
+
   ```markdown
   # Gourab Mondal
 
@@ -86,12 +92,14 @@ curl -s -i http://localhost:3000/llms.txt
   Status: Available for work.
 
   ## Contact & Profiles
+
   - Email: gourab.m099@gmail.com
   - GitHub: https://github.com/assignment-sets
   - LinkedIn: https://linkedin.com/in/gourab-mondal-gm2004
   - Resume: https://my-resumes-788125169240-ap-south-1-an.s3.ap-south-1.amazonaws.com/resume.pdf
 
   ## Skills
+
   - **Languages**: Python, Java, JavaScript
-  ...
+    ...
   ```

@@ -51,6 +51,7 @@ export default function Projects({
                 href={project.githubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={`View ${project.title} source code on GitHub`}
                 onClick={() =>
                   trackEvent("project_click", {
                     project_name: project.title,
@@ -77,6 +78,7 @@ export default function Projects({
           href={`${portfolioData.github}?tab=repositories`}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="View all public repositories on GitHub"
           onClick={() =>
             trackEvent("project_click", {
               project_name: "all_repositories",

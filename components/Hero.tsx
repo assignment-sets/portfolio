@@ -14,6 +14,7 @@ export default function Hero() {
       <div className="hero-links">
         <a
           href={`mailto:${portfolioData.email}`}
+          aria-label={`Send email to ${portfolioData.email}`}
           onClick={() => trackEvent("email_click", { location: "hero" })}
         >
           Email
@@ -22,6 +23,7 @@ export default function Hero() {
           href={portfolioData.github}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Visit Gourab Mondal's GitHub profile"
           onClick={() =>
             trackEvent("social_click", {
               platform: "github",
@@ -35,6 +37,7 @@ export default function Hero() {
           href={portfolioData.linkedin}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Visit Gourab Mondal's LinkedIn profile"
           onClick={() =>
             trackEvent("social_click", {
               platform: "linkedin",
@@ -48,6 +51,7 @@ export default function Hero() {
           href={portfolioData.resumeUrl}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Download Gourab Mondal's resume PDF"
           onClick={() => trackEvent("resume_click", { location: "hero" })}
         >
           Resume &darr;

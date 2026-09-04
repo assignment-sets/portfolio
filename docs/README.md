@@ -30,6 +30,16 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 - [**Dynamic GitHub Repositories & ISR Caching**](data/github-integration.md)
   - Details the server-side GitHub REST API integration, Incremental Static Regeneration (1h background sync), tag casing normalization, and silent static fallback architecture.
 
+### SEO & Discoverability
+
+- [**SEO & Lighthouse Technical Architecture**](seo/search-engine-optimization.md)
+  - Details the `metadataBase` canonical routing, dynamic OpenGraph social image (`app/opengraph-image.tsx`), Schema.org JSON-LD `ProfilePage` graph, WCAG AA contrast compliance, and `/api/` crawler protection.
+
+### Offline & PWA Resilience
+
+- [**Offline Architecture & PWA Caching**](offline/pwa-and-offline-caching.md)
+  - Details the native Service Worker (`public/sw.js`), Network-First HTML caching, Next.js 16 Web App Manifest (`app/manifest.ts`), and React 19 `useSyncExternalStore` offline indicator.
+
 ---
 
 ## Quick Testing Cheatsheet

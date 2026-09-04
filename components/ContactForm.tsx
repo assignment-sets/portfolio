@@ -26,6 +26,16 @@ export default function ContactForm() {
     setIsSubmitting(true);
     setStatus({ message: "", type: "" });
 
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setStatus({
+        message:
+          "You are currently offline. Please reconnect or email gourab.m099@gmail.com directly.",
+        type: "err",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/send-email", {
         method: "POST",
@@ -51,8 +61,11 @@ export default function ContactForm() {
       }
     } catch {
       trackEvent("contact_form_submit", { status: "network_error" });
+      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
       setStatus({
-        message: "Failed to send. Email me directly.",
+        message: isOffline
+          ? "You are currently offline. Please reconnect or email gourab.m099@gmail.com directly."
+          : "Failed to send. Email me directly.",
         type: "err",
       });
     } finally {

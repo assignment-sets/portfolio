@@ -35,12 +35,15 @@ export async function POST(req: NextRequest) {
     // If no direct payload and no newsletterId provided, search MongoDB for scheduled or partially sent issue
     if (!newsletterId && (!subject || !contentHtml)) {
       const newslettersCollection = await getNewslettersCollection();
-      const pendingIssue = await newslettersCollection.findOne({
-        $or: [
-          { status: "scheduled", scheduledFor: { $lte: new Date() } },
-          { status: "partially_sent" },
-        ],
-      });
+      const pendingIssue = await newslettersCollection.findOne(
+        {
+          $or: [
+            { status: "scheduled", scheduledFor: { $lte: new Date() } },
+            { status: "partially_sent" },
+          ],
+        },
+        { sort: { scheduledFor: 1, createdAt: 1 } }
+      );
 
       if (!pendingIssue) {
         return NextResponse.json({

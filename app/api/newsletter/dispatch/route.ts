@@ -3,8 +3,19 @@ import { dispatchNewsletter, getNewslettersCollection } from "@/lib/newsletter";
 
 // Allow max duration on Vercel Hobby/Pro to ensure multi-batch completion
 export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
+interface DispatchBody {
+  newsletterId?: string;
+  title?: string;
+  subject?: string;
+  contentHtml?: string;
+  html?: string;
+  contentText?: string;
+  text?: string;
+}
+
+async function handleDispatch(req: NextRequest, bodyPayload?: DispatchBody) {
   // Verify Bearer token authorization
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -24,7 +35,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
+    const body: DispatchBody = bodyPayload || (await req.json().catch(() => ({})));
 
     let newsletterId = body.newsletterId;
     let title = body.title;
@@ -75,4 +86,19 @@ export async function POST(req: NextRequest) {
     console.error("Newsletter dispatch error:", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+/**
+ * Vercel Cron Jobs invoke routes using HTTP GET requests.
+ */
+export async function GET(req: NextRequest) {
+  return handleDispatch(req);
+}
+
+/**
+ * Manual / programmatic dispatches can also invoke via HTTP POST with payload.
+ */
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+  return handleDispatch(req, body);
 }

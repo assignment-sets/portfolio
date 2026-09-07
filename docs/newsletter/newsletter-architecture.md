@@ -70,6 +70,7 @@ flowchart TD
 ### `GET / POST /api/newsletter/dispatch`
 - Protected by `Authorization: Bearer ${CRON_SECRET}` with `maxDuration = 60` for Vercel Hobby serverless timeout safety and `dynamic = "force-dynamic"`.
 - Supports **`GET`** (invoked automatically by Vercel Cron according to `vercel.json`) and **`POST`** (manual/programmatic dispatch with body payload).
+- Automatically queries and dispatches the oldest pending issue with `status: "scheduled"` or `status: "partially_sent"` in FIFO order. Once dispatched, status transitions to `"sent"`.
 - **Atomic State Machine**:
   1. Queries only active subscribers not yet in `newsletter.deliveredEmails`.
   2. Slices recipients into batches of 50 (well below Resend's 100 limit).

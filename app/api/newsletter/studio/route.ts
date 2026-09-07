@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
 
       const isSchedule = action === "schedule";
       const status = isSchedule ? "scheduled" : "draft";
-      const scheduledDate = scheduledFor ? new Date(scheduledFor) : (isSchedule ? new Date(Date.now() + 86400000) : undefined);
+      const scheduledDate = isSchedule ? new Date() : undefined;
 
       if (newsletterId) {
         if (isSchedule) {

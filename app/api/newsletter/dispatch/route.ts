@@ -49,11 +49,11 @@ async function handleDispatch(req: NextRequest, bodyPayload?: DispatchBody) {
       const pendingIssue = await newslettersCollection.findOne(
         {
           $or: [
-            { status: "scheduled", scheduledFor: { $lte: new Date() } },
+            { status: "scheduled" },
             { status: "partially_sent" },
           ],
         },
-        { sort: { scheduledFor: 1, createdAt: 1 } }
+        { sort: { createdAt: 1 } }
       );
 
       if (!pendingIssue) {

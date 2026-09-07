@@ -36,6 +36,25 @@
   --overlay-bg: rgba(22, 22, 22, 0.88);
 }
 
+/* Native OS dark mode fallback (ensures 404 and SSR render dark immediately if OS is dark) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161616;
+    --bg-soft: #1e1e1e;
+    --border: #2e2e2e;
+    --border-strong: #444;
+    --text: #e8e8e8;
+    --text-mid: #aaaaaa;
+    --text-dim: #9a9a9a;
+    --accent: #e8e8e8;
+    --nav-bg: rgba(22, 22, 22, 0.92);
+    --card-bg: #1e1e1e;
+    --input-bg: #1e1e1e;
+    --tag-bg: #2a2a2a;
+    --overlay-bg: rgba(22, 22, 22, 0.88);
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }

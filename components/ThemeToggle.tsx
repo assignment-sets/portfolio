@@ -5,6 +5,16 @@ import { trackEvent } from "@/lib/analytics";
 
 export default function ThemeToggle() {
   useEffect(() => {
+    // 1. Sync on mount from localStorage or system preference
+    const saved = localStorage.getItem("theme");
+    if (saved) {
+      document.documentElement.setAttribute("data-theme", saved);
+    } else {
+      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+    }
+
+    // 2. Listen to system preference changes if no manual override
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e: MediaQueryListEvent) => {
       if (!localStorage.getItem("theme")) {

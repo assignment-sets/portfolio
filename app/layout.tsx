@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ThemeInitScript from "@/components/ThemeInitScript";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import OfflineNotice from "@/components/OfflineNotice";
@@ -132,17 +133,15 @@ const jsonLd = {
   ],
 };
 
-const themeScript = `(function(){try{var s=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var dark=s?s==='dark':d;if(dark){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.setAttribute('data-theme','light');}}catch(e){}})();`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <ThemeInitScript />
         <link
           rel="alternate"
           type="text/plain"

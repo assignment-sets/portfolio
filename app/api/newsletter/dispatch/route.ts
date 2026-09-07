@@ -1,0 +1,75 @@
+import { NextRequest, NextResponse } from "next/server";
+import { dispatchNewsletter, getNewslettersCollection } from "@/lib/newsletter";
+
+// Allow max duration on Vercel Hobby/Pro to ensure multi-batch completion
+export const maxDuration = 60;
+
+export async function POST(req: NextRequest) {
+  // Verify Bearer token authorization
+  const authHeader = req.headers.get("authorization");
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    return NextResponse.json(
+      { error: "Server CRON_SECRET is not configured." },
+      { status: 500 }
+    );
+  }
+
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json(
+      { error: "Unauthorized. Valid Bearer token required." },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const body = await req.json().catch(() => ({}));
+
+    let newsletterId = body.newsletterId;
+    let title = body.title;
+    let subject = body.subject;
+    let contentHtml = body.contentHtml || body.html;
+    let contentText = body.contentText || body.text;
+
+    // If no direct payload and no newsletterId provided, search MongoDB for scheduled or partially sent issue
+    if (!newsletterId && (!subject || !contentHtml)) {
+      const newslettersCollection = await getNewslettersCollection();
+      const pendingIssue = await newslettersCollection.findOne({
+        $or: [
+          { status: "scheduled", scheduledFor: { $lte: new Date() } },
+          { status: "partially_sent" },
+        ],
+      });
+
+      if (!pendingIssue) {
+        return NextResponse.json({
+          success: true,
+          message:
+            "Cron verified. No scheduled or partially sent newsletter ready for dispatch.",
+        });
+      }
+
+      newsletterId = pendingIssue._id.toString();
+      title = pendingIssue.title;
+      subject = pendingIssue.subject;
+      contentHtml = pendingIssue.contentHtml;
+      contentText = pendingIssue.contentText;
+    }
+
+    const result = await dispatchNewsletter({
+      newsletterId,
+      title: title || subject,
+      subject,
+      contentHtml,
+      contentText,
+    });
+
+    return NextResponse.json(result);
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Dispatch failed";
+    console.error("Newsletter dispatch error:", error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

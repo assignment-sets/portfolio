@@ -13,6 +13,7 @@ import {
 import { portfolioData } from "@/data/portfolio";
 import type { Project } from "@/data/portfolio";
 import { trackEvent } from "@/lib/analytics";
+import NewsletterSubscribe from "@/components/NewsletterSubscribe";
 
 interface FooterProps {
   projects?: Project[];
@@ -26,6 +27,7 @@ export default function Footer({
   return (
     <footer>
       <div className="footer-inner">
+        <NewsletterSubscribe />
         <div className="footer-grid">
           {/* Brand & Social Column */}
           <div className="footer-brand-col">

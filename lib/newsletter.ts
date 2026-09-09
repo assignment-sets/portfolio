@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { ObjectId } from "mongodb";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { getDb } from "./mongodb";
 
 export interface Subscriber {
@@ -224,14 +224,13 @@ export async function dispatchNewsletter({
     };
   }
 
-  // 3. Verify Resend Configuration
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const emailFrom =
-    process.env.EMAIL_FROM || "Gourab Mondal <onboarding@resend.dev>";
+  // 3. Verify Gmail SMTP Configuration
+  const gmailUser = process.env.EMAIL_USER;
+  const gmailPass = process.env.EMAIL_PASS;
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "https://gourabmondal.vercel.app";
 
-  if (!resendApiKey) {
+  if (!gmailUser || !gmailPass) {
     await newslettersCollection.updateOne(
       { _id: campaign._id },
       { $set: { status: "draft", updatedAt: new Date() } }
@@ -241,23 +240,26 @@ export async function dispatchNewsletter({
       campaignId: campaign._id.toString(),
       pending: pendingSubscribers.length,
       message:
-        "RESEND_API_KEY is not configured yet. Saved campaign as draft in database.",
+        "EMAIL_USER or EMAIL_PASS is not configured yet. Saved campaign as draft in database.",
     };
   }
 
-  const resend = new Resend(resendApiKey);
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: gmailUser,
+      pass: gmailPass,
+    },
+  });
 
-  // 4. Batch Dispatch in Chunks of 50 (respects rate limit & memory)
-  const BATCH_SIZE = 50;
+  // 4. Sequential dispatch — one email per subscriber (personalized unsubscribe + privacy)
+  // Gmail free tier: 500/day, our scale 3-50/week → sequential loop is 3-10s within Vercel 60s
   let newlyDeliveredCount = 0;
   let batchFailCount = 0;
 
-  for (let i = 0; i < pendingSubscribers.length; i += BATCH_SIZE) {
-    const chunk = pendingSubscribers.slice(i, i + BATCH_SIZE);
-
-    const batchPayload = chunk.map((sub) => {
-      const unsubscribeUrl = `${siteUrl}/api/newsletter/unsubscribe?token=${sub.unsubscribeToken}`;
-      const personalizedHtml = `
+  for (const sub of pendingSubscribers) {
+    const unsubscribeUrl = `${siteUrl}/api/newsletter/unsubscribe?token=${sub.unsubscribeToken}`;
+    const personalizedHtml = `
         ${campaign!.contentHtml}
         <hr style="margin-top: 32px; border: none; border-top: 1px solid #eaeaea;" />
         <footer style="font-size: 12px; color: #888; margin-top: 16px;">
@@ -266,59 +268,38 @@ export async function dispatchNewsletter({
         </footer>
       `;
 
-      return {
-        from: emailFrom,
-        to: [sub.email],
+    try {
+      await transporter.sendMail({
+        from: `Gourab Mondal <${gmailUser}>`,
+        to: sub.email,
         subject: campaign!.subject,
         html: personalizedHtml,
         headers: {
           "List-Unsubscribe": `<${unsubscribeUrl}>`,
         },
-      };
-    });
+      });
 
-    try {
-      const result = await resend.batch.send(batchPayload);
+      newlyDeliveredCount += 1;
 
-      if (result.error) {
-        console.error("Resend batch send error for chunk:", result.error);
-        batchFailCount += chunk.length;
-        await newslettersCollection.updateOne(
-          { _id: campaign._id },
-          {
-            $inc: { "deliveryStats.failed": chunk.length },
-            $set: { updatedAt: new Date() },
-          }
-        );
-      } else if (result.data) {
-        const successfulEmails = chunk.map((c) => c.email);
-        newlyDeliveredCount += successfulEmails.length;
-
-        // ATOMIC STATE UPDATE: Immediately record delivered emails in MongoDB
-        await newslettersCollection.updateOne(
-          { _id: campaign._id },
-          {
-            $addToSet: { deliveredEmails: { $each: successfulEmails } },
-            $inc: { "deliveryStats.success": successfulEmails.length },
-            $set: { updatedAt: new Date() },
-          }
-        );
-      }
-    } catch (err) {
-      console.error("Batch send exception:", err);
-      batchFailCount += chunk.length;
+      // ATOMIC STATE UPDATE: Immediately record delivered email in MongoDB (resume-safe for cron)
       await newslettersCollection.updateOne(
         { _id: campaign._id },
         {
-          $inc: { "deliveryStats.failed": chunk.length },
+          $addToSet: { deliveredEmails: sub.email },
+          $inc: { "deliveryStats.success": 1 },
           $set: { updatedAt: new Date() },
         }
       );
-    }
-
-    // Safety pause: 500ms between batches to respect Resend 10 req/s rate limits
-    if (i + BATCH_SIZE < pendingSubscribers.length) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    } catch (err) {
+      console.error(`Failed to send to ${sub.email}:`, err);
+      batchFailCount += 1;
+      await newslettersCollection.updateOne(
+        { _id: campaign._id },
+        {
+          $inc: { "deliveryStats.failed": 1 },
+          $set: { updatedAt: new Date() },
+        }
+      );
     }
   }
 

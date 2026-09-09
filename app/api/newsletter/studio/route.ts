@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ObjectId } from "mongodb";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import {
   getNewslettersCollection,
   dispatchNewsletter,
@@ -60,15 +60,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, html });
     }
 
-    // ACTION: Send single test email to author
+    // ACTION: Send single test email to author via Gmail SMTP
     if (action === "test_send") {
-      const resendApiKey = process.env.RESEND_API_KEY;
-      const emailFrom = process.env.EMAIL_FROM || "Gourab Mondal <onboarding@resend.dev>";
+      const gmailUser = process.env.EMAIL_USER;
+      const gmailPass = process.env.EMAIL_PASS;
       const authorEmail = body.authorEmail || "mondalgourab140@gmail.com";
 
-      if (!resendApiKey) {
+      if (!gmailUser || !gmailPass) {
         return NextResponse.json(
-          { error: "RESEND_API_KEY is not configured." },
+          { error: "EMAIL_USER or EMAIL_PASS is not configured." },
           { status: 500 }
         );
       }
@@ -86,23 +86,28 @@ export async function POST(req: NextRequest) {
         previewText: `[TEST] ${subject}`,
       });
 
-      const resend = new Resend(resendApiKey);
-      const { data, error } = await resend.emails.send({
-        from: emailFrom,
-        to: [authorEmail],
-        subject: `[PREVIEW] ${subject}`,
-        html: emailHtml,
-      });
+      try {
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: { user: gmailUser, pass: gmailPass },
+        });
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const info = await transporter.sendMail({
+          from: `Gourab Mondal <${gmailUser}>`,
+          to: authorEmail,
+          subject: `[PREVIEW] ${subject}`,
+          html: emailHtml,
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: `Test email successfully dispatched to ${authorEmail}.`,
+          messageId: info.messageId,
+        });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Failed to send test email";
+        return NextResponse.json({ error: message }, { status: 500 });
       }
-
-      return NextResponse.json({
-        success: true,
-        message: `Test email successfully dispatched to ${authorEmail}.`,
-        messageId: data?.id,
-      });
     }
 
     // ACTION: Unschedule (revert scheduled edition to draft)

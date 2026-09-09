@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { getNewslettersCollection, Newsletter } from "../lib/newsletter";
 import { renderNewsletterEmail } from "../lib/email-template";
 
@@ -62,7 +62,8 @@ async function main() {
   const subject = metadata.subject || title;
   const status = (metadata.status as Newsletter["status"]) || "scheduled";
   const authorEmail = process.env.AUTHOR_EMAIL || "mondalgourab140@gmail.com";
-  const emailFrom = process.env.EMAIL_FROM || "Gourab Mondal <onboarding@resend.dev>";
+  const gmailUser = process.env.EMAIL_USER;
+  const gmailPass = process.env.EMAIL_PASS;
 
   console.log(`\n========================================`);
   console.log(`Newsletter Issue: "${title}"`);
@@ -76,26 +77,28 @@ async function main() {
   });
 
   if (isTest) {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      console.error("Error: RESEND_API_KEY is not set in environment.");
+    if (!gmailUser || !gmailPass) {
+      console.error("Error: EMAIL_USER or EMAIL_PASS is not set in environment.");
       process.exit(1);
     }
-    console.log(`Dispatching preview email to ${authorEmail} via Resend...`);
-    const resend = new Resend(apiKey);
-    const { data, error } = await resend.emails.send({
-      from: emailFrom,
-      to: [authorEmail],
-      subject: `[CLI TEST] ${subject}`,
-      html: compiledHtml,
+    console.log(`Dispatching preview email to ${authorEmail} via Gmail SMTP...`);
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: gmailUser, pass: gmailPass },
     });
 
-    if (error) {
-      console.error("Resend error:", error);
+    try {
+      const info = await transporter.sendMail({
+        from: `Gourab Mondal <${gmailUser}>`,
+        to: authorEmail,
+        subject: `[CLI TEST] ${subject}`,
+        html: compiledHtml,
+      });
+      console.log(`Preview email successfully sent! Message ID: ${info.messageId}`);
+    } catch (err) {
+      console.error("Nodemailer error:", err);
       process.exit(1);
     }
-
-    console.log(`Preview email successfully sent! Message ID: ${data?.id}`);
     process.exit(0);
   }
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The portfolio integrates Google Analytics 4 via Next.js's official package: **`@next/third-parties/google`** (`<GoogleAnalytics gaId="G-VY36RMW61H" />`).
+The portfolio integrates Google Analytics 4 via Next.js's official package: **`@next/third-parties/google`** (`<GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />` with `NEXT_PUBLIC_GA_ID=G-8LVL1N08S6`).
 
 In addition to standard page views and UTM campaign attribution, it instruments granular custom event tracking through a safe client utility: [`lib/analytics.ts`](../../lib/analytics.ts).
 

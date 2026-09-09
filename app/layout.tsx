@@ -163,7 +163,7 @@ export default function RootLayout({
         <ServiceWorkerRegister />
         {children}
         <OfflineNotice />
-        <GoogleAnalytics gaId="G-VY36RMW61H" />
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
       </body>
     </html>
   );

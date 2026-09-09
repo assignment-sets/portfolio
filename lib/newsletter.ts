@@ -303,17 +303,46 @@ export async function dispatchNewsletter({
     }
   }
 
-  // 5. Final State Transition
+  // 5. Final State Transition — skip partially_sent unless systemic failure
+  // Toy-scale, non-vital: don't block weekly queue for isolated bad addresses.
+  // Heuristic: vast minority sent (e.g. 2/50) => systemic (SMTP/down) => keep retryable.
+  //           vast majority sent (e.g. 48/50) => per-address hoax/bounce => treat as done.
   const totalDeliveredNow = alreadyDelivered.size + newlyDeliveredCount;
   const isComplete =
     totalDeliveredNow >= totalActiveSubscribers && batchFailCount === 0;
+
+  let finalStatus: Newsletter["status"];
+  let finalSentAt: Date | undefined;
+
+  if (isComplete) {
+    finalStatus = "sent";
+    finalSentAt = new Date();
+  } else {
+    const pendingCount = pendingSubscribers.length;
+    const successRatio =
+      pendingCount > 0 ? newlyDeliveredCount / pendingCount : 1;
+    const HEURISTIC_THRESHOLD = 0.5; // <50% success => systemic
+
+    const isSystemicFailure =
+      successRatio < HEURISTIC_THRESHOLD ||
+      (pendingCount > 10 && newlyDeliveredCount < 3);
+
+    if (isSystemicFailure) {
+      finalStatus = "partially_sent";
+      finalSentAt = undefined;
+    } else {
+      // Isolated failures (e.g. 1-2 hoax emails) — mark sent so next cron picks fresh scheduled issue
+      finalStatus = "sent";
+      finalSentAt = new Date();
+    }
+  }
 
   await newslettersCollection.updateOne(
     { _id: campaign._id },
     {
       $set: {
-        status: isComplete ? "sent" : "partially_sent",
-        sentAt: isComplete ? new Date() : undefined,
+        status: finalStatus,
+        sentAt: finalSentAt,
         updatedAt: new Date(),
       },
     }
@@ -326,6 +355,6 @@ export async function dispatchNewsletter({
     previouslyDelivered: alreadyDelivered.size,
     newlyDelivered: newlyDeliveredCount,
     failed: batchFailCount,
-    status: isComplete ? "sent" : "partially_sent",
+    status: finalStatus,
   };
 }

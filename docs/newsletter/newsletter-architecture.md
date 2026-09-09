@@ -75,7 +75,7 @@ flowchart TD
   1. Queries only active subscribers not yet in `newsletter.deliveredEmails`.
   2. Sends sequentially one email per subscriber (≤50) via single Gmail SMTP transporter — each with personalized `unsubscribeToken` footer (no CC/BCC exposure).
   3. Immediately persists each success/failure to MongoDB via `$addToSet: { deliveredEmails: email }` / `$inc: { deliveryStats.success/failed }`.
-  4. If interrupted or re-run (cron retry, timeout), automatically resumes without duplicate sends — `Vercel Cron` runs strictly once a week (`0 10 * * 1` Mondays 10:00 UTC) and re-queries `$nin deliveredEmails`.
+  4. **Skips `partially_sent` unless systemic:** At dispatch end, if `successRatio < 0.5` (e.g. 2/50 sent) or `pending>10 && delivered<3`, keep `partially_sent` for retry next Monday; otherwise (e.g. 48/50 sent = isolated hoax/bounce) promote to `sent` so next cron picks the next `scheduled` issue and queue is not blocked. `Vercel Cron` runs strictly once a week (`0 10 * * 1` Mondays 10:00 UTC).
   5. Total time for 50 subscribers ≈ 3–10s, well within `maxDuration 60s`.
 
 ---

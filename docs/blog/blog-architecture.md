@@ -165,25 +165,53 @@ Authenticated endpoint for blog post creation, updates, previews, and deletion.
 
 ---
 
-## 6. Quick Verification Cheatsheet
+## 6. MongoDB Atlas Native Lucene Search Engine (`$search`)
+
+The public blog feed uses **MongoDB Atlas Search** powered by Apache Lucene directly on the cluster, avoiding any in-memory buffering or client-side fuzzy search libraries:
+
+```mermaid
+flowchart TD
+    UserQuery["Search Query (e.g., 'ipsec', 'distribted')"] --> AggPipeline["collection.aggregate([ ... ])"]
+    
+    subgraph AtlasCluster ["MongoDB Atlas Lucene Engine"]
+        AggPipeline --> SearchStage["$search with compound.should & fuzzy: { maxEdits: 1 }"]
+        SearchStage --> FacetStage["$facet: docs ($skip, $limit) + metadata ($$SEARCH_META)"]
+    end
+    
+    FacetStage --> Response["PaginatedBlogPosts { posts, total, page, totalPages }"]
+```
+
+1. **Native `$search` Aggregation Stage**: Executes compound Lucene query with relevance score boosts (`title`: 5x, `tags`: 3x, `description`: 2x, `content`: 1x).
+2. **Built-in Fuzzy Matching**: Configured with `fuzzy: { maxEdits: 1 }` across fields to catch misspellings and typos natively without external vector embeddings or in-memory search packages.
+3. **Single-Roundtrip Pagination via `$facet` & `$$SEARCH_META`**: Fetches total count and paginated matching documents (`$skip`, `$limit`) in a single roundtrip to the Atlas cluster.
+4. **URL State, Auto-Search & Shortcuts**: Synchronized to `/blog?q=...` with 350ms debounced live auto-search, focus-guarded input state, and global `/` hotkey focus.
+
+---
+
+## 7. Quick Verification Cheatsheet
 
 ### 1. Fetch Paginated Public Blog Posts via API
 ```bash
 curl -i "http://localhost:3000/api/blog?page=1&limit=10"
 ```
 
-### 2. Fetch Blog Post via AI Markdown Content Negotiation
+### 2. Search Blog Posts via API (Atlas Search $search)
+```bash
+curl -i "http://localhost:3000/api/blog?q=ipsec"
+```
+
+### 3. Fetch Blog Post via AI Markdown Content Negotiation
 ```bash
 curl -i -H "Accept: text/markdown" http://localhost:3000/blog/designing-resilient-distributed-workflows
 ```
 
-### 3. Verify 404 Cloaking on Unauthorized Studio Access
+### 4. Verify 404 Cloaking on Unauthorized Studio Access
 ```bash
 curl -i http://localhost:3000/studio/blog
 # Expected output: HTTP/1.1 404 Not Found
 ```
 
-### 4. Authenticated Studio Search Query
+### 5. Authenticated Studio Search Query
 ```bash
 curl -i -X POST http://localhost:3000/api/blog/studio \
   -H "Authorization: Bearer <STUDIO_SECRET>" \

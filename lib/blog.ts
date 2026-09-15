@@ -43,7 +43,7 @@ export function calculateReadingTime(markdownText: string): number {
 }
 
 /**
- * Returns the MongoDB `blogs` collection with unique slug index.
+ * Returns the MongoDB `blogs` collection with unique slug and status indexes.
  */
 export async function getBlogsCollection() {
   const db = await getDb();
@@ -91,22 +91,136 @@ export interface PaginatedBlogPosts {
 }
 
 /**
- * Retrieves paginated published blog posts with optional tag filtering.
+ * Retrieves paginated published blog posts with optional tag filtering and Atlas native Lucene search.
+ * Uses MongoDB Atlas Search ($search) with compound fuzzy text matching across title, tags, description, and content.
  */
 export async function getPublishedBlogPosts(options?: {
   tag?: string;
+  query?: string;
   page?: number;
   limit?: number;
 }): Promise<PaginatedBlogPosts> {
   const collection = await getBlogsCollection();
+  const page = Math.max(1, options?.page || 1);
+  const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+  const skip = (page - 1) * limit;
+  const trimmedQuery = options?.query?.trim() || "";
+
+  if (trimmedQuery) {
+    // --- MongoDB Atlas Search Native Lucene Aggregation Pipeline ($search) ---
+    const searchStage: Record<string, unknown> = {
+      $search: {
+        index: "default",
+        compound: {
+          should: [
+            {
+              text: {
+                query: trimmedQuery,
+                path: "title",
+                score: { boost: { value: 5 } },
+                fuzzy: { maxEdits: 1 },
+              },
+            },
+            {
+              text: {
+                query: trimmedQuery,
+                path: "tags",
+                score: { boost: { value: 3 } },
+                fuzzy: { maxEdits: 1 },
+              },
+            },
+            {
+              text: {
+                query: trimmedQuery,
+                path: "description",
+                score: { boost: { value: 2 } },
+                fuzzy: { maxEdits: 1 },
+              },
+            },
+            {
+              text: {
+                query: trimmedQuery,
+                path: "content",
+                fuzzy: { maxEdits: 1 },
+              },
+            },
+          ],
+          minimumShouldMatch: 1,
+          filter: [
+            {
+              text: {
+                query: "published",
+                path: "status",
+              },
+            },
+            ...(options?.tag
+              ? [
+                  {
+                    text: {
+                      query: options.tag,
+                      path: "tags",
+                    },
+                  },
+                ]
+              : []),
+          ],
+        },
+        count: {
+          type: "total",
+        },
+      },
+    };
+
+    const pipeline = [
+      searchStage,
+      {
+        $facet: {
+          metadata: [{ $replaceWith: "$$SEARCH_META" }, { $limit: 1 }],
+          docs: [{ $skip: skip }, { $limit: limit }],
+        },
+      },
+    ];
+
+    try {
+      const result = await collection.aggregate(pipeline).toArray();
+      const firstFacet = result[0] as
+        | {
+            metadata?: Array<{ count?: { total?: number } }>;
+            docs?: BlogPost[];
+          }
+        | undefined;
+
+      const total = firstFacet?.metadata?.[0]?.count?.total || 0;
+      const posts = (firstFacet?.docs || []) as BlogPost[];
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+
+      return {
+        posts,
+        total,
+        page,
+        pageSize: limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      };
+    } catch {
+      return {
+        posts: [],
+        total: 0,
+        page,
+        pageSize: limit,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      };
+    }
+  }
+
+  // --- Standard non-search paginated query ---
   const query: Record<string, unknown> = { status: "published" };
   if (options?.tag) {
     query.tags = options.tag;
   }
-
-  const page = Math.max(1, options?.page || 1);
-  const limit = options?.limit && options.limit > 0 ? options.limit : 10;
-  const skip = (page - 1) * limit;
 
   const [total, posts] = await Promise.all([
     collection.countDocuments(query),

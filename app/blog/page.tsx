@@ -3,9 +3,10 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BlogCardLink from "@/components/BlogCardLink";
+import BlogSearchBar from "@/components/BlogSearchBar";
 import { getPublishedBlogPosts } from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Blogs | Gourab Mondal",
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 interface BlogIndexPageProps {
-  searchParams?: Promise<{ page?: string }>;
+  searchParams?: Promise<{ page?: string; q?: string; tag?: string }>;
 }
 
 export default async function BlogIndexPage({
@@ -37,14 +38,30 @@ export default async function BlogIndexPage({
     1,
     parseInt(resolvedSearchParams?.page || "1", 10) || 1
   );
+  const searchQuery = (resolvedSearchParams?.q || "").trim();
+  const tagFilter = (resolvedSearchParams?.tag || "").trim();
   const pageSize = 10;
 
   const [data, projects] = await Promise.all([
-    getPublishedBlogPosts({ page: currentPage, limit: pageSize }),
+    getPublishedBlogPosts({
+      page: currentPage,
+      limit: pageSize,
+      query: searchQuery || undefined,
+      tag: tagFilter || undefined,
+    }),
     getFeaturedProjects(),
   ]);
 
-  const { posts, totalPages, hasNextPage, hasPrevPage } = data;
+  const { posts, total, totalPages, hasNextPage, hasPrevPage } = data;
+
+  const buildPaginationUrl = (pageNumber: number) => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("q", searchQuery);
+    if (tagFilter) params.set("tag", tagFilter);
+    if (pageNumber > 1) params.set("page", pageNumber.toString());
+    const queryStr = params.toString();
+    return queryStr ? `/blog?${queryStr}` : "/blog";
+  };
 
   return (
     <>
@@ -54,16 +71,42 @@ export default async function BlogIndexPage({
           <h1 className="blog-index-title">Blogs</h1>
         </header>
 
+        <div className="blog-search-container">
+          <BlogSearchBar initialQuery={searchQuery} />
+        </div>
+
+        {searchQuery && (
+          <div className="blog-search-status">
+            <span>
+              Showing {total} {total === 1 ? "result" : "results"} for{" "}
+              <strong>&ldquo;{searchQuery}&rdquo;</strong>
+            </span>
+          </div>
+        )}
+
         <section className="blog-list-section">
           {posts.length === 0 ? (
             <div className="blog-empty-card">
+              <div className="blog-empty-icon-wrap">
+                <Search size={24} className="blog-empty-icon" />
+              </div>
               <p className="blog-empty-title">
-                {currentPage > 1
+                {searchQuery
+                  ? `No articles matching "${searchQuery}"`
+                  : currentPage > 1
                   ? "No more articles on this page."
                   : "No articles published yet."}
               </p>
               <p className="blog-empty-desc">
-                {currentPage > 1 ? (
+                {searchQuery ? (
+                  <>
+                    Try searching with different keywords, check for spelling, or{" "}
+                    <Link href="/blog" className="blog-empty-back-link">
+                      browse all articles
+                    </Link>
+                    .
+                  </>
+                ) : currentPage > 1 ? (
                   <Link href="/blog" className="blog-empty-back-link">
                     &larr; Return to page 1
                   </Link>
@@ -151,11 +194,7 @@ export default async function BlogIndexPage({
             <div className="blog-pagination">
               {hasPrevPage ? (
                 <Link
-                  href={
-                    currentPage - 1 === 1
-                      ? "/blog"
-                      : `/blog?page=${currentPage - 1}`
-                  }
+                  href={buildPaginationUrl(currentPage - 1)}
                   className="blog-pagination-btn"
                 >
                   <ArrowLeft size={13} />
@@ -174,7 +213,7 @@ export default async function BlogIndexPage({
 
               {hasNextPage ? (
                 <Link
-                  href={`/blog?page=${currentPage + 1}`}
+                  href={buildPaginationUrl(currentPage + 1)}
                   className="blog-pagination-btn"
                 >
                   <span>Next</span>

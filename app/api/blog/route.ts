@@ -10,11 +10,13 @@ export async function GET(req: NextRequest) {
       Math.max(1, parseInt(searchParams.get("limit") || "10", 10) || 10)
     );
     const tag = searchParams.get("tag") || undefined;
+    const query = searchParams.get("q") || undefined;
 
     const data = await getPublishedBlogPosts({
       page,
       limit,
       tag,
+      query,
     });
 
     return NextResponse.json({

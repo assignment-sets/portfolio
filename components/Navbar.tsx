@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/#experience", label: "Experience" },
   { href: "/#education", label: "Education" },
   { href: "/#contact", label: "Contact" },
+  { href: "/blog", label: "Blog" },
 ];
 
 export default function Navbar() {

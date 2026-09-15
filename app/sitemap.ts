@@ -9,6 +9,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: "https://gourabmondal.vercel.app/blog",
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: "https://gourabmondal.vercel.app/llms.txt",
       lastModified: new Date(),
       changeFrequency: "weekly",

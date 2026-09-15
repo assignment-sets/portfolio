@@ -21,6 +21,8 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
   - Details the native Next.js 16 Route Handler, Zod validation, HTML sanitization, Nodemailer SMTP with `replyTo` support, and in-memory IP rate limiting.
 - [**Newsletter & MongoDB Persistence**](newsletter/newsletter-architecture.md)
   - Details the self-hosted newsletter platform, MongoDB Atlas connection pooling (`lib/mongodb.ts`), Gmail SMTP sequential delivery (no domain needed), one-click unsubscribe handling, and secure Vercel Cron dispatch.
+- [**Personal Blog Platform & Cloaked Studio**](blog/blog-architecture.md)
+  - Details the native blogging system, MongoDB `blogs` collection and indexes, 404-cloaked authoring studio (`/studio/blog`), paginated public API (`/api/blog`), dynamic OpenGraph SEO, and RFC 9110 Markdown negotiation integration.
 
 ### Analytics & Observability
 

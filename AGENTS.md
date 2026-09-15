@@ -34,19 +34,23 @@ app/                      # App Router
   sitemap.ts / robots.ts / manifest.ts / opengraph-image.tsx
   llms.txt/route.ts       # text/plain, cache 3600/86400, from data/portfolio.ts + github.ts
   markdown/[[...slug]]/route.ts  # text/markdown, internal fetch + node-html-markdown
-  studio/page.tsx + StudioClient.tsx  # force-dynamic, 404-cloaked authoring UI
+  studio/page.tsx + StudioClient.tsx  # force-dynamic, 404-cloaked newsletter authoring UI
+  studio/blog/page.tsx + BlogStudioClient.tsx  # force-dynamic, 404-cloaked blog authoring UI
+  blog/page.tsx + blog/[slug]/page.tsx         # Public blog feed (paginated) & article reader
   api/
     send-email/route.ts              # Zod + rate-limit + nodemailer (Gmail)
     newsletter/{subscribe,unsubscribe,dispatch}/route.ts
     newsletter/studio{,/session}/route.ts
+    blog/route.ts                    # Public paginated blog query API
+    blog/studio/route.ts             # Authenticated blog CRUD & search API
     [...catchAll]/route.ts           # JSON 404 for unknown API routes
 components/               # 15 client/server comps — Navbar, Hero, Projects, ThemeToggle, etc.
-lib/                      # accept.ts, github.ts, mongodb.ts, newsletter.ts, email-template.ts, analytics.ts, rate-limit.ts
+lib/                      # accept.ts, github.ts, mongodb.ts, newsletter.ts, blog.ts, email-template.ts, analytics.ts, rate-limit.ts
 data/portfolio.ts         # Single source of truth — pinnedRepoNames, skills, projects, education
 public/sw.js              # Vanilla SW — Network-First HTML, Stale-While-Revalidate assets
 proxy.ts                  # Next.js 16 Proxy (replaces middleware.ts) — content negotiation
 scripts/newsletter-sync.ts
-docs/                     # Engineering docs — ai-ux, newsletter, offline, analytics, data, seo, api
+docs/                     # Engineering docs — ai-ux, newsletter, blog, offline, analytics, data, seo, api
 vercel.json               # Cron: GET /api/newsletter/dispatch Mondays 10:00 UTC
 ```
 
@@ -80,6 +84,7 @@ Vercel needs `NEXT_PUBLIC_GA_ID`, `CRON_SECRET`, `STUDIO_SECRET`, `MONGODB_URI`,
 
 - AI UX: `docs/ai-ux/llms-txt.md`, `docs/ai-ux/markdown-content-negotiation.md`
 - Newsletter: `docs/newsletter/newsletter-architecture.md`
+- Blog: `docs/blog/blog-architecture.md`
 - Offline: `docs/offline/pwa-and-offline-caching.md`
 - Analytics: `docs/analytics/event-tracking.md` (7 events)
 - Data: `docs/data/github-integration.md` (ISR 3600, pinned repos, fallback)

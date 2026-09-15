@@ -31,6 +31,9 @@ flowchart TD
 | `contact_form_submit` | `{ status: "success" \| "error" \| "network_error" }`      | `ContactForm.tsx`            | Measures contact form completion rate                       |
 | `theme_toggle`        | `{ new_theme: "light" \| "dark" }`                         | `ThemeToggle.tsx`            | Tracks visitor color theme preferences                      |
 | `protocol_click`      | `{ target: "llms.txt" \| "sitemap" }`                      | `Footer.tsx`                 | Tracks discovery of machine-readable endpoints              |
+| `blog_article_click`  | `{ post_title: string, slug: string, location: "card_title" \| "read_more" }` | `BlogCardLink.tsx` | Identifies which essays generate reader interest            |
+| `blog_share_modal_open` | `{ post_title: string, slug: string, location: "header" \| "footer" }` | `BlogShareButton.tsx` | Measures engagement with article sharing dialog             |
+| `blog_share_click`    | `{ post_title: string, slug: string, channel: "copy" \| "x" \| "linkedin" \| "whatsapp" \| "email", location: "header" \| "footer" }` | `BlogShareButton.tsx` | Measures distribution channel preference and link copies    |
 
 ---
 
@@ -44,3 +47,19 @@ flowchart TD
    - Navigate to **Explore &rarr; Free-form exploration**.
    - Add dimensions `Event name` and parameter dimensions (`project_name`, `platform`, `location`, `new_theme`).
    - Add metric `Event count` to visualize conversion breakdowns.
+
+---
+
+## UTM Campaign Attribution Taxonomy
+
+All outbound social sharing, messaging links, and clipboard copy URLs are automatically tagged via `buildUtmUrl()` ([`lib/analytics.ts`](../../lib/analytics.ts)):
+
+| Channel | `utm_source` | `utm_medium` | `utm_campaign` | `utm_content` |
+| :--- | :--- | :--- | :--- | :--- |
+| **X (Twitter)** | `twitter` | `social` | `blog_share` | `header` / `footer` |
+| **LinkedIn** | `linkedin` | `social` | `blog_share` | `header` / `footer` |
+| **WhatsApp** | `whatsapp` | `social` | `blog_share` | `header` / `footer` |
+| **Email** | `email` | `email` | `blog_share` | `header` / `footer` |
+| **Direct Copy Link** | `direct_share` | `referral` | `blog_share` | `header` / `footer` |
+
+In GA4, navigate to **Reports &rarr; Acquisition &rarr; Traffic acquisition** and group by `Session source / medium` or `Session campaign` to analyze which channels and articles drive incoming traffic.

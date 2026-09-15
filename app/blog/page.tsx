@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BlogCardLink from "@/components/BlogCardLink";
 import { getPublishedBlogPosts } from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -102,12 +103,15 @@ export default async function BlogIndexPage({
                     </div>
 
                     <h2 className="blog-card-title">
-                      <Link
+                      <BlogCardLink
                         href={`/blog/${post.slug}`}
+                        title={post.title}
+                        slug={post.slug}
+                        location="card_title"
                         className="blog-card-link"
                       >
                         {post.title}
-                      </Link>
+                      </BlogCardLink>
                     </h2>
 
                     {post.description && (
@@ -125,13 +129,16 @@ export default async function BlogIndexPage({
                     )}
 
                     <div className="blog-card-footer">
-                      <Link
+                      <BlogCardLink
                         href={`/blog/${post.slug}`}
+                        title={post.title}
+                        slug={post.slug}
+                        location="read_more"
                         className="blog-read-more"
                       >
                         <span>Read article</span>
                         <ArrowRight size={13} />
-                      </Link>
+                      </BlogCardLink>
                     </div>
                   </article>
                 );

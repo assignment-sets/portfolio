@@ -7,12 +7,10 @@ import PageLoader from "./PageLoader";
 export default function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isNavigating, setIsNavigating] = useState(false);
+  const currentKey = `${pathname}?${searchParams?.toString() || ""}`;
+  const [targetKey, setTargetKey] = useState<string | null>(null);
 
-  // Reset loading state when pathname or search parameters change
-  useEffect(() => {
-    setIsNavigating(false);
-  }, [pathname, searchParams]);
+  const isNavigating = targetKey !== null && targetKey !== currentKey;
 
   // Intercept internal link clicks to provide instant visual feedback
   useEffect(() => {
@@ -50,14 +48,12 @@ export default function NavigationProgress() {
       // Normalize target URL
       try {
         const url = new URL(anchor.href, window.location.origin);
-        if (
-          url.pathname === window.location.pathname &&
-          url.search === window.location.search
-        ) {
+        const targetUrlKey = `${url.pathname}?${url.searchParams.toString()}`;
+        if (targetUrlKey === currentKey) {
           return;
         }
 
-        setIsNavigating(true);
+        setTargetKey(targetUrlKey);
       } catch {
         // Ignore invalid URLs
       }
@@ -68,13 +64,13 @@ export default function NavigationProgress() {
     return () => {
       document.removeEventListener("click", handleClick, { capture: true });
     };
-  }, [pathname]);
+  }, [currentKey, pathname]);
 
   // Safety fallback: auto-clear after 8 seconds in case navigation is interrupted
   useEffect(() => {
     if (!isNavigating) return;
     const timer = setTimeout(() => {
-      setIsNavigating(false);
+      setTargetKey(null);
     }, 8000);
     return () => clearTimeout(timer);
   }, [isNavigating]);

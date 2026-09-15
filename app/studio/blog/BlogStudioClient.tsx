@@ -19,7 +19,6 @@ import {
   X,
   Globe,
   ExternalLink,
-  BookOpen,
   Mail,
 } from "lucide-react";
 

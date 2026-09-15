@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { action, title, subject, markdown, scheduledFor, newsletterId } = body;
+    const { action, title, subject, markdown, newsletterId } = body;
 
     if (!action) {
       return NextResponse.json({ error: "Action is required." }, { status: 400 });

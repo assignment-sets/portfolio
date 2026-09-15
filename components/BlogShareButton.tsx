@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import {
   Share2,
   Check,
@@ -11,6 +11,14 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { trackEvent, buildUtmUrl } from "@/lib/analytics";
+
+function getClientOrigin() {
+  return typeof window !== "undefined" ? window.location.origin : "";
+}
+
+function subscribeToOrigin() {
+  return () => {};
+}
 
 interface BlogShareButtonProps {
   title: string;
@@ -26,14 +34,13 @@ export default function BlogShareButton({
 }: BlogShareButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [origin, setOrigin] = useState(process.env.NEXT_PUBLIC_SITE_URL || "");
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOrigin(window.location.origin);
-    }
-  }, []);
-
+  const clientOrigin = useSyncExternalStore(
+    subscribeToOrigin,
+    getClientOrigin,
+    () => ""
+  );
+  const origin = clientOrigin || process.env.NEXT_PUBLIC_SITE_URL || "";
   const baseUrl = origin ? `${origin}/blog/${slug}` : `/blog/${slug}`;
 
   const copyUtmUrl = buildUtmUrl(baseUrl, {
@@ -71,11 +78,7 @@ export default function BlogShareButton({
     content: variant,
   });
 
-  const [shareUrl, setShareUrl] = useState(copyUtmUrl);
-
-  useEffect(() => {
-    setShareUrl(copyUtmUrl);
-  }, [copyUtmUrl]);
+  const shareUrl = copyUtmUrl;
 
   // Lock body scroll and listen for Escape key when modal is open
   useEffect(() => {

@@ -18,6 +18,9 @@ import {
   ChevronRight,
   CalendarX,
   Plus,
+  Trash2,
+  Search,
+  X,
 } from "lucide-react";
 
 interface IssueItem {
@@ -83,6 +86,10 @@ export default function StudioClient({
     type: "success" | "error" | "info" | "";
     message: string;
   }>({ type: "", message: "" });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   const [isPending, startTransition] = useTransition();
 
@@ -276,6 +283,41 @@ export default function StudioClient({
     });
   };
 
+  const handleDeleteIssue = (targetId: string, event?: React.MouseEvent) => {
+    if (event) event.stopPropagation();
+
+    if (!window.confirm("Permanently delete this newsletter edition? This cannot be undone.")) {
+      return;
+    }
+
+    startTransition(async () => {
+      setFeedback({ type: "info", message: "Deleting edition..." });
+      try {
+        const res = await fetch("/api/newsletter/studio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "delete",
+            newsletterId: targetId,
+            secret: initialKey,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setFeedback({ type: "success", message: "Edition deleted permanently." });
+          setIssues((prev) => prev.filter((i) => i.id !== targetId));
+          if (currentIssueId === targetId) {
+            handleNewEdition();
+          }
+        } else {
+          setFeedback({ type: "error", message: data.error || "Failed to delete edition." });
+        }
+      } catch {
+        setFeedback({ type: "error", message: "Network error deleting edition." });
+      }
+    });
+  };
+
   const handleNewEdition = () => {
     setCurrentIssueId(null);
     setTitle("");
@@ -304,6 +346,61 @@ export default function StudioClient({
       type: "info",
       message: `Loaded "${issue.title}" into editor.`,
     });
+  };
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const query = searchQuery.trim();
+    setIsSearching(true);
+    try {
+      const res = await fetch("/api/newsletter/studio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "search",
+          query,
+          secret: initialKey,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.issues) {
+        setIssues(data.issues);
+        setIsSearchActive(Boolean(query));
+      } else {
+        setFeedback({ type: "error", message: data.error || "Search failed." });
+      }
+    } catch {
+      setFeedback({ type: "error", message: "Network error searching editions." });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleClearSearch = async () => {
+    setSearchQuery("");
+    setIsSearching(true);
+    try {
+      const res = await fetch("/api/newsletter/studio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "search",
+          query: "",
+          secret: initialKey,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.issues) {
+        setIssues(data.issues);
+        setIsSearchActive(false);
+      }
+    } catch {
+      // Fallback to initial
+      setIssues(initialIssues);
+      setIsSearchActive(false);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -521,6 +618,19 @@ export default function StudioClient({
                     </button>
                   </>
                 )}
+
+                {currentIssueId && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteIssue(currentIssueId)}
+                    disabled={isPending}
+                    className="studio-btn studio-btn-delete"
+                    title="Permanently delete this edition"
+                  >
+                    <Trash2 size={14} />
+                    <span>Delete</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -544,8 +654,40 @@ export default function StudioClient({
           <div className="studio-card">
             <div className="studio-sidebar-header">
               <h2 className="studio-sidebar-title">Recent Editions</h2>
-              <span className="studio-subtext">{issues.length} records</span>
+              <span className="studio-subtext">
+                {isSearchActive ? `${issues.length} found` : `${issues.length} records`}
+              </span>
             </div>
+
+            <form onSubmit={handleSearch} className="studio-search-form">
+              <div className="studio-search-row">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search editions..."
+                  className="studio-search-input"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="studio-search-clear"
+                    title="Clear search"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={isSearching}
+                  className="studio-search-btn"
+                  title="Search editions in database"
+                >
+                  <Search size={13} />
+                </button>
+              </div>
+            </form>
 
             <button
               type="button"
@@ -584,6 +726,14 @@ export default function StudioClient({
                       <span className={`studio-status-pill status-${issue.status}`}>
                         {issue.status}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteIssue(issue.id, e)}
+                        className="studio-issue-delete-btn"
+                        title="Delete edition"
+                      >
+                        <Trash2 size={12} />
+                      </button>
                       <ChevronRight size={13} className="studio-chevron" />
                     </div>
                   </div>

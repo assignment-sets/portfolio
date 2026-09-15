@@ -48,6 +48,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Action is required." }, { status: 400 });
     }
 
+    // ACTION: Search editions with native MongoDB regex search (limit 10)
+    if (action === "search") {
+      const query = typeof body.query === "string" ? body.query.trim() : "";
+      const newslettersCol = await getNewslettersCollection();
+
+      let filter: Record<string, unknown> = {};
+      if (query) {
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        filter = {
+          $or: [
+            { title: { $regex: escaped, $options: "i" } },
+            { subject: { $regex: escaped, $options: "i" } },
+            { contentText: { $regex: escaped, $options: "i" } },
+          ],
+        };
+      }
+
+      const rawDocs = await newslettersCol
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .toArray();
+
+      const formattedIssues = rawDocs.map((doc) => ({
+        id: doc._id!.toString(),
+        title: doc.title || doc.subject,
+        subject: doc.subject,
+        status: doc.status,
+        scheduledFor: doc.scheduledFor ? doc.scheduledFor.toISOString() : undefined,
+        sentAt: doc.sentAt ? doc.sentAt.toISOString() : undefined,
+        stats: doc.deliveryStats,
+        deliveredCount: doc.deliveredEmails ? doc.deliveredEmails.length : 0,
+        createdAt: doc.createdAt.toISOString(),
+        markdownText: doc.contentText,
+      }));
+
+      return NextResponse.json({ success: true, issues: formattedIssues });
+    }
+
     // ACTION: Compile Markdown to HTML for preview
     if (action === "render_preview") {
       if (!markdown) {
@@ -160,6 +199,30 @@ export async function POST(req: NextRequest) {
         action: "unschedule",
         newsletterId,
         message: "Newsletter unscheduled! Status reverted to draft.",
+      });
+    }
+
+    // ACTION: Delete Edition permanently
+    if (action === "delete") {
+      if (!newsletterId || !ObjectId.isValid(newsletterId)) {
+        return NextResponse.json(
+          { error: "Valid newsletterId is required to delete." },
+          { status: 400 }
+        );
+      }
+
+      const newslettersCol = await getNewslettersCollection();
+      const res = await newslettersCol.deleteOne({ _id: new ObjectId(newsletterId) });
+
+      if (res.deletedCount === 0) {
+        return NextResponse.json({ error: "Edition not found." }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        action: "delete",
+        newsletterId,
+        message: "Edition deleted permanently.",
       });
     }
 

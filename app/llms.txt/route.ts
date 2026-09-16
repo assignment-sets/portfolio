@@ -1,7 +1,8 @@
 import { portfolioData, type Project } from "@/data/portfolio";
 import { getFeaturedProjects } from "@/lib/github";
+import { getAvailabilityStatus } from "@/lib/settings";
 
-function generateLlmsTxt(projects: Project[]): string {
+function generateLlmsTxt(projects: Project[], isAvailable: boolean): string {
   const lines: string[] = [];
 
   // Title & Bio
@@ -11,8 +12,10 @@ function generateLlmsTxt(projects: Project[]): string {
     `> ${portfolioData.role} based in ${portfolioData.location}. ${portfolioData.bio}`
   );
   lines.push("");
-  lines.push("Status: Available for work.");
-  lines.push("");
+  if (isAvailable) {
+    lines.push("Status: Available for work.");
+    lines.push("");
+  }
 
   // Contact & Profiles
   lines.push("## Contact & Profiles");
@@ -61,8 +64,11 @@ function generateLlmsTxt(projects: Project[]): string {
 }
 
 export async function GET() {
-  const projects = await getFeaturedProjects();
-  const content = generateLlmsTxt(projects);
+  const [projects, isAvailable] = await Promise.all([
+    getFeaturedProjects(),
+    getAvailabilityStatus(),
+  ]);
+  const content = generateLlmsTxt(projects, isAvailable);
 
   return new Response(content, {
     headers: {

@@ -7,15 +7,19 @@ import Education from "@/components/Education";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import { getFeaturedProjects } from "@/lib/github";
+import { getAvailabilityStatus } from "@/lib/settings";
 
 export default async function Home() {
-  const projects = await getFeaturedProjects();
+  const [projects, isAvailable] = await Promise.all([
+    getFeaturedProjects(),
+    getAvailabilityStatus(),
+  ]);
 
   return (
     <>
       <Navbar />
       <main className="wrap">
-        <Hero />
+        <Hero isAvailable={isAvailable} />
         <Skills />
         <Projects projects={projects} />
         <Experience />

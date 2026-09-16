@@ -3,10 +3,16 @@
 import { portfolioData } from "@/data/portfolio";
 import { trackEvent } from "@/lib/analytics";
 
-export default function Hero() {
+interface HeroProps {
+  isAvailable?: boolean;
+}
+
+export default function Hero({ isAvailable = true }: HeroProps) {
   return (
     <section id="hero">
-      <div className="avail-badge">&#x25CF;&nbsp; Available for work</div>
+      {isAvailable && (
+        <div className="avail-badge">&#x25CF;&nbsp; Available for work</div>
+      )}
       <h1>{portfolioData.name}</h1>
       <p className="hero-role">{portfolioData.role}</p>
       <p className="hero-location">{portfolioData.location}</p>

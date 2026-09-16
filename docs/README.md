@@ -19,6 +19,8 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 
 - [**Contact Email Route (`/api/send-email`)**](api/contact-email.md)
   - Details the native Next.js 16 Route Handler, Zod validation, HTML sanitization, Nodemailer SMTP with `replyTo` support, and in-memory IP rate limiting.
+- [**Availability Status Route (`/api/availability`)**](#6-toggle-availability-status)
+  - Authenticated route to toggle or set the "Available for work" status badge on the Hero section with instant ISR revalidation.
 - [**Newsletter & MongoDB Persistence**](newsletter/newsletter-architecture.md)
   - Details the self-hosted newsletter platform, MongoDB Atlas connection pooling (`lib/mongodb.ts`), Gmail SMTP sequential delivery (no domain needed), one-click unsubscribe handling, and secure Vercel Cron dispatch.
 - [**Personal Blog Platform & Cloaked Studio**](blog/blog-architecture.md)

@@ -45,9 +45,10 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests
   if (req.method !== "GET") return;
 
-  // Never cache API routes or Google Analytics telemetry
+  // Never cache API routes, Studio routes, or Google Analytics telemetry
   if (
     url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/studio") ||
     url.hostname.includes("google-analytics") ||
     url.hostname.includes("googletagmanager")
   ) {

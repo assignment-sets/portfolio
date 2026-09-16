@@ -8,9 +8,26 @@ export default function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentKey = `${pathname}?${searchParams?.toString() || ""}`;
+  const [prevKey, setPrevKey] = useState(currentKey);
   const [targetKey, setTargetKey] = useState<string | null>(null);
 
-  const isNavigating = targetKey !== null && targetKey !== currentKey;
+  // Automatically reset targetKey when current route changes or finishes rendering
+  if (prevKey !== currentKey) {
+    setPrevKey(currentKey);
+    setTargetKey(null);
+  }
+
+  const isNavigating =
+    targetKey !== null &&
+    targetKey !== currentKey &&
+    pathname !== "/_not-found";
+
+  // Reset when user navigates using browser back / forward buttons
+  useEffect(() => {
+    const handlePopState = () => setTargetKey(null);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Intercept internal link clicks to provide instant visual feedback
   useEffect(() => {
@@ -66,12 +83,12 @@ export default function NavigationProgress() {
     };
   }, [currentKey, pathname]);
 
-  // Safety fallback: auto-clear after 8 seconds in case navigation is interrupted
+  // Safety fallback: auto-clear after 3.5 seconds in case navigation is interrupted or canceled
   useEffect(() => {
     if (!isNavigating) return;
     const timer = setTimeout(() => {
       setTargetKey(null);
-    }, 8000);
+    }, 3500);
     return () => clearTimeout(timer);
   }, [isNavigating]);
 

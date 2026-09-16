@@ -20,6 +20,7 @@ import {
   Globe,
   ExternalLink,
   Mail,
+  ArrowLeft,
 } from "lucide-react";
 
 interface BlogItem {
@@ -39,6 +40,7 @@ interface BlogItem {
 
 interface BlogStudioClientProps {
   initialBlogs: BlogItem[];
+  initialSelectedBlog?: BlogItem | null;
   initialKey?: string;
 }
 
@@ -68,17 +70,48 @@ async function processEvent(event: WebhookEvent) {
 
 export default function BlogStudioClient({
   initialBlogs,
+  initialSelectedBlog,
   initialKey,
 }: BlogStudioClientProps) {
   const router = useRouter();
 
-  const [currentBlogId, setCurrentBlogId] = useState<string | null>(null);
-  const [title, setTitle] = useState("Designing Resilient Distributed Workflows");
-  const [slug, setSlug] = useState("designing-resilient-distributed-workflows");
-  const [description, setDescription] = useState("Learnings and architectural patterns from building resilient distributed agents and microservices.");
-  const [tagsInput, setTagsInput] = useState("Distributed Systems, Architecture, Backend");
-  const [markdown, setMarkdown] = useState(STARTER_BLOG);
-  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const initialTarget =
+    initialSelectedBlog || (initialBlogs.length > 0 ? initialBlogs[0] : null);
+
+  const [currentBlogId, setCurrentBlogId] = useState<string | null>(
+    initialTarget?.id || null
+  );
+  const [title, setTitle] = useState(
+    initialTarget?.title ||
+      (initialBlogs.length === 0
+        ? "Designing Resilient Distributed Workflows"
+        : "")
+  );
+  const [slug, setSlug] = useState(
+    initialTarget?.slug ||
+      (initialBlogs.length === 0
+        ? "designing-resilient-distributed-workflows"
+        : "")
+  );
+  const [description, setDescription] = useState(
+    initialTarget?.description ||
+      (initialBlogs.length === 0
+        ? "Learnings and architectural patterns from building resilient distributed agents and microservices."
+        : "")
+  );
+  const [tagsInput, setTagsInput] = useState(
+    initialTarget?.tags
+      ? initialTarget.tags.join(", ")
+      : initialBlogs.length === 0
+      ? "Distributed Systems, Architecture, Backend"
+      : ""
+  );
+  const [markdown, setMarkdown] = useState(
+    initialTarget?.content || STARTER_BLOG
+  );
+  const [status, setStatus] = useState<"draft" | "published">(
+    initialTarget?.status === "published" ? "published" : "draft"
+  );
 
   const [blogs, setBlogs] = useState<BlogItem[]>(initialBlogs);
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
@@ -112,7 +145,10 @@ export default function BlogStudioClient({
     }
   };
 
-  // On mount with initialKey, establish persistent session cookie
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [isTogglingAvail, setIsTogglingAvail] = useState(false);
+
+  // On mount with initialKey, establish persistent session cookie & fetch availability
   useEffect(() => {
     if (initialKey) {
       fetch("/api/newsletter/studio/session", {
@@ -121,7 +157,47 @@ export default function BlogStudioClient({
         body: JSON.stringify({ key: initialKey }),
       }).catch(() => {});
     }
+
+    fetch("/api/availability", {
+      headers: initialKey ? { Authorization: `Bearer ${initialKey}` } : {},
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && typeof data.available === "boolean") {
+          setIsAvailable(data.available);
+        }
+      })
+      .catch(() => {});
   }, [initialKey]);
+
+  const handleToggleAvailability = async () => {
+    setIsTogglingAvail(true);
+    try {
+      const res = await fetch("/api/availability", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(initialKey ? { Authorization: `Bearer ${initialKey}` } : {}),
+        },
+        body: JSON.stringify({ secret: initialKey }),
+      });
+      const data = await res.json();
+      if (data.success && typeof data.available === "boolean") {
+        setIsAvailable(data.available);
+        setFeedback({
+          type: "success",
+          message: data.message || "Availability status updated.",
+        });
+      }
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Failed to toggle availability status.",
+      });
+    } finally {
+      setIsTogglingAvail(false);
+    }
+  };
 
   // Load preview
   const loadPreview = async () => {
@@ -359,18 +435,44 @@ export default function BlogStudioClient({
     <div className="studio-container">
       {/* Top Bar */}
       <header className="studio-header">
-        <div className="studio-brand">
-          <Link href="/" className="studio-back-link">
-            &larr; Portfolio
-          </Link>
-          <span className="studio-sep">/</span>
-          <h1 className="studio-title">Blog Studio</h1>
+        <div className="studio-header-top">
+          <div className="studio-brand">
+            <Link href="/studio" className="studio-back-btn" title="Back to Studio">
+              <ArrowLeft size={16} />
+            </Link>
+            <h1 className="studio-title">Blog</h1>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLockStudio}
+            className="studio-lock-btn studio-lock-btn-mobile"
+            title="Lock studio & clear session"
+          >
+            <Lock size={12} />
+            <span>Lock</span>
+          </button>
         </div>
 
         <div className="studio-header-meta">
+          <button
+            type="button"
+            onClick={handleToggleAvailability}
+            disabled={isTogglingAvail || isAvailable === null}
+            className={`studio-avail-toggle-btn ${isAvailable ? "on" : "off"}`}
+            title="Toggle 'Available for work' badge on homepage"
+          >
+            <span
+              className={`avail-indicator-dot ${
+                isAvailable ? "dot-on" : "dot-off"
+              }`}
+            />
+            <span>Work: {isAvailable ? "Available" : "Hidden"}</span>
+          </button>
+
           {/* Switch to Newsletter Studio */}
           <Link
-            href="/studio"
+            href="/studio/newsletter"
             className="studio-metric"
             style={{ textDecoration: "none" }}
             title="Switch to Newsletter Studio"
@@ -382,7 +484,7 @@ export default function BlogStudioClient({
           <button
             type="button"
             onClick={handleLockStudio}
-            className="studio-lock-btn"
+            className="studio-lock-btn studio-lock-btn-desktop"
             title="Lock studio & clear session"
           >
             <Lock size={12} />
@@ -544,10 +646,14 @@ export default function BlogStudioClient({
                   onClick={() => handleSave(false)}
                   disabled={isPending || !markdown.trim()}
                   className="studio-btn studio-btn-secondary"
-                  title="Save as draft (hidden from public)"
+                  title={
+                    isPublished
+                      ? "Unpublish article and save as draft"
+                      : "Save draft (hidden from public)"
+                  }
                 >
                   <Save size={14} />
-                  <span>Save Draft</span>
+                  <span>{isPublished ? "Unpublish to Draft" : "Save Draft"}</span>
                 </button>
 
                 <button
@@ -668,6 +774,17 @@ export default function BlogStudioClient({
                       <span className={`studio-status-pill status-${b.status}`}>
                         {b.status === "published" ? "Live" : "Draft"}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLoadBlog(b);
+                        }}
+                        className="studio-issue-edit-btn"
+                        title="Edit article"
+                      >
+                        <Edit3 size={12} />
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => handleDelete(b.id, e)}

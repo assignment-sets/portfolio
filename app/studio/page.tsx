@@ -1,16 +1,18 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import StudioClient from "./StudioClient";
+import StudioHubClient from "./StudioHubClient";
 import {
   getSubscribersCollection,
   getNewslettersCollection,
 } from "@/lib/newsletter";
+import { getBlogsCollection } from "@/lib/blog";
+import { getAvailabilityStatus } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Studio",
+  title: "Studio Control Center",
   robots: {
     index: false,
     follow: false,
@@ -37,54 +39,52 @@ export default async function StudioPage({ searchParams }: StudioPageProps) {
     notFound();
   }
 
-  // Fetch metrics and recent issues for author overview
+  // Fetch summary stats concurrently for the dashboard hub
+  let available = true;
   let activeSubscribers = 0;
-  let recentIssues: Array<{
-    id: string;
-    title: string;
-    subject: string;
-    status: string;
-    scheduledFor?: string;
-    sentAt?: string;
-    stats?: { success: number; failed: number };
-    deliveredCount: number;
-    createdAt: string;
-    markdownText?: string;
-  }> = [];
+  let totalNewsletters = 0;
+  let totalBlogs = 0;
+  let publishedBlogs = 0;
+  let draftBlogs = 0;
 
   try {
-    const subscribersCol = await getSubscribersCollection();
-    activeSubscribers = await subscribersCol.countDocuments({ status: "active" });
+    const [availStatus, subCol, newsCol, blogsCol] = await Promise.all([
+      getAvailabilityStatus(),
+      getSubscribersCollection().catch(() => null),
+      getNewslettersCollection().catch(() => null),
+      getBlogsCollection().catch(() => null),
+    ]);
 
-    const newslettersCol = await getNewslettersCollection();
-    const rawIssues = await newslettersCol
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .toArray();
+    available = availStatus;
 
-    recentIssues = rawIssues.map((doc) => ({
-      id: doc._id!.toString(),
-      title: doc.title || doc.subject,
-      subject: doc.subject,
-      status: doc.status,
-      scheduledFor: doc.scheduledFor ? doc.scheduledFor.toISOString() : undefined,
-      sentAt: doc.sentAt ? doc.sentAt.toISOString() : undefined,
-      stats: doc.deliveryStats,
-      deliveredCount: doc.deliveredEmails ? doc.deliveredEmails.length : 0,
-      createdAt: doc.createdAt.toISOString(),
-      markdownText: doc.contentText,
-    }));
+    if (subCol) {
+      activeSubscribers = await subCol.countDocuments({ status: "active" });
+    }
+
+    if (newsCol) {
+      totalNewsletters = await newsCol.countDocuments({});
+    }
+
+    if (blogsCol) {
+      totalBlogs = await blogsCol.countDocuments({});
+      publishedBlogs = await blogsCol.countDocuments({ status: "published" });
+      draftBlogs = await blogsCol.countDocuments({ status: "draft" });
+    }
   } catch (err) {
-    console.error("Failed to fetch initial studio data:", err);
+    console.error("Failed to fetch studio hub stats:", err);
   }
 
   return (
-    <StudioClient
-      activeSubscribers={activeSubscribers}
-      initialIssues={recentIssues}
+    <StudioHubClient
+      initialStats={{
+        available,
+        activeSubscribers,
+        totalNewsletters,
+        totalBlogs,
+        publishedBlogs,
+        draftBlogs,
+      }}
       initialKey={key}
-      authorEmail="mondalgourab140@gmail.com"
     />
   );
 }

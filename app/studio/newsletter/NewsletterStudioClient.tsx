@@ -13,7 +13,6 @@ import {
   Eye,
   Edit3,
   Lock,
-  Users,
   RefreshCw,
   ChevronRight,
   CalendarX,
@@ -21,6 +20,8 @@ import {
   Trash2,
   Search,
   X,
+  BookOpen,
+  ArrowLeft,
 } from "lucide-react";
 
 interface IssueItem {
@@ -36,7 +37,7 @@ interface IssueItem {
   markdownText?: string;
 }
 
-interface StudioClientProps {
+interface NewsletterStudioClientProps {
   activeSubscribers: number;
   initialIssues: IssueItem[];
   initialKey?: string;
@@ -65,12 +66,12 @@ eventBus.on("task:completed", async (result) => {
 What have you been building this week? Hit reply and let me know—I read every email.
 `;
 
-export default function StudioClient({
+export default function NewsletterStudioClient({
   activeSubscribers,
   initialIssues,
   initialKey,
   authorEmail,
-}: StudioClientProps) {
+}: NewsletterStudioClientProps) {
   const router = useRouter();
   const [title, setTitle] = useState("Issue #1: Building Reliable Distributed Workflows");
   const [subject, setSubject] = useState("Issue #1: Building Reliable Distributed Workflows");
@@ -97,7 +98,10 @@ export default function StudioClient({
   const isScheduled = currentIssue?.status === "scheduled";
   const isSent = currentIssue?.status === "sent";
 
-  // On mount with initialKey, establish persistent session cookie
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [isTogglingAvail, setIsTogglingAvail] = useState(false);
+
+  // On mount with initialKey, establish persistent session cookie & fetch availability
   useEffect(() => {
     if (initialKey) {
       fetch("/api/newsletter/studio/session", {
@@ -106,7 +110,47 @@ export default function StudioClient({
         body: JSON.stringify({ key: initialKey }),
       }).catch(() => {});
     }
+
+    fetch("/api/availability", {
+      headers: initialKey ? { Authorization: `Bearer ${initialKey}` } : {},
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && typeof data.available === "boolean") {
+          setIsAvailable(data.available);
+        }
+      })
+      .catch(() => {});
   }, [initialKey]);
+
+  const handleToggleAvailability = async () => {
+    setIsTogglingAvail(true);
+    try {
+      const res = await fetch("/api/availability", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(initialKey ? { Authorization: `Bearer ${initialKey}` } : {}),
+        },
+        body: JSON.stringify({ secret: initialKey }),
+      });
+      const data = await res.json();
+      if (data.success && typeof data.available === "boolean") {
+        setIsAvailable(data.available);
+        setFeedback({
+          type: "success",
+          message: data.message || "Availability status updated.",
+        });
+      }
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Failed to toggle availability status.",
+      });
+    } finally {
+      setIsTogglingAvail(false);
+    }
+  };
 
   // Update preview when switching to preview tab or on demand
   const loadPreview = async () => {
@@ -407,25 +451,59 @@ export default function StudioClient({
     <div className="studio-container">
       {/* Top Bar */}
       <header className="studio-header">
-        <div className="studio-brand">
-          <Link href="/" className="studio-back-link" title="Return to site">
-            &larr; Portfolio
-          </Link>
-          <span className="studio-sep">/</span>
-          <h1 className="studio-title">Newsletter Studio</h1>
+        <div className="studio-header-top">
+          <div className="studio-brand">
+            <Link href="/studio" className="studio-back-btn" title="Back to Studio">
+              <ArrowLeft size={16} />
+            </Link>
+            <h1 className="studio-title">Newsletter</h1>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLockStudio}
+            className="studio-lock-btn studio-lock-btn-mobile"
+            title="Clear session and lock studio"
+          >
+            <Lock size={12} />
+            <span>Lock</span>
+          </button>
         </div>
 
         <div className="studio-header-meta">
-          <div className="studio-metric" title="Total active subscribers in MongoDB">
-            <Users size={14} />
-            <span><strong>{activeSubscribers}</strong> Subscribers</span>
-          </div>
           <button
+            type="button"
+            onClick={handleToggleAvailability}
+            disabled={isTogglingAvail || isAvailable === null}
+            className={`studio-avail-toggle-btn ${isAvailable ? "on" : "off"}`}
+            title="Toggle 'Available for work' badge on homepage"
+          >
+            <span
+              className={`avail-indicator-dot ${
+                isAvailable ? "dot-on" : "dot-off"
+              }`}
+            />
+            <span>Work: {isAvailable ? "Available" : "Hidden"}</span>
+          </button>
+
+          {/* Switch to Blog Studio */}
+          <Link
+            href="/studio/blog"
+            className="studio-metric"
+            style={{ textDecoration: "none" }}
+            title="Switch to Blog Studio"
+          >
+            <BookOpen size={13} />
+            <span>Blog Studio</span>
+          </Link>
+
+          <button
+            type="button"
             onClick={handleLockStudio}
-            className="studio-lock-btn"
+            className="studio-lock-btn studio-lock-btn-desktop"
             title="Clear session and lock studio"
           >
-            <Lock size={13} />
+            <Lock size={12} />
             <span>Lock</span>
           </button>
         </div>
@@ -655,7 +733,7 @@ export default function StudioClient({
             <div className="studio-sidebar-header">
               <h2 className="studio-sidebar-title">Recent Editions</h2>
               <span className="studio-subtext">
-                {isSearchActive ? `${issues.length} found` : `${issues.length} records`}
+                {isSearchActive ? `${issues.length} found` : `${issues.length} records · ${activeSubscribers} subs`}
               </span>
             </div>
 

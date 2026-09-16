@@ -34,10 +34,12 @@ app/                      # App Router
   sitemap.ts / robots.ts / manifest.ts / opengraph-image.tsx
   llms.txt/route.ts       # text/plain, cache 3600/86400, from data/portfolio.ts + github.ts
   markdown/[[...slug]]/route.ts  # text/markdown, internal fetch + node-html-markdown
-  studio/page.tsx + StudioClient.tsx  # force-dynamic, 404-cloaked newsletter authoring UI
+  studio/page.tsx + StudioHubClient.tsx        # force-dynamic, 404-cloaked central studio control hub
+  studio/newsletter/page.tsx + NewsletterStudioClient.tsx  # force-dynamic, 404-cloaked newsletter UI
   studio/blog/page.tsx + BlogStudioClient.tsx  # force-dynamic, 404-cloaked blog authoring UI
   blog/page.tsx + blog/[slug]/page.tsx         # Public blog feed (paginated) & article reader
   api/
+    availability/route.ts            # Authenticated work availability toggle & status API
     send-email/route.ts              # Zod + rate-limit + nodemailer (Gmail)
     newsletter/{subscribe,unsubscribe,dispatch}/route.ts
     newsletter/studio{,/session}/route.ts

@@ -101,14 +101,14 @@ Zero tokens or secrets are committed to Git. Vercel automatically injects the `C
 
 To write, preview, and schedule weekly newsletters without exposing administrative interfaces on the public portfolio:
 
-### 404 Cloaking Pattern (`app/studio/page.tsx`)
-- Visiting `/studio` without valid authentication triggers Next.js's native `notFound()` function.
+### 404 Cloaking Pattern (`app/studio/newsletter/page.tsx` & `app/studio/page.tsx`)
+- Visiting `/studio` or `/studio/newsletter` without valid authentication triggers Next.js's native `notFound()` function.
 - Responds with an authentic **HTTP 404 Not Found** status and the portfolio's custom 404 page (`app/not-found.tsx`).
 - Crawlers, scrapers, and unauthorized users cannot detect that the route exists.
 - Disallowed from indexing in `app/robots.ts` (`disallow: ["/api/", "/studio/"]`).
 
 ### Studio Access & Authentication
-- Unlock URL: `https://gourabmondal.vercel.app/studio?key=<STUDIO_SECRET>`
+- Unlock URL: `https://gourabmondal.vercel.app/studio?key=<STUDIO_SECRET>` or `https://gourabmondal.vercel.app/studio/newsletter?key=<STUDIO_SECRET>`
 - Uses a dedicated high-entropy `STUDIO_SECRET` (isolated from the automated Vercel `CRON_SECRET`).
 - Establishes a 30-day secure `httpOnly` session cookie (`studio_session`) via `POST /api/newsletter/studio/session`.
 - Zero login forms or administrative links are present anywhere on the public portfolio.

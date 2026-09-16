@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { ObjectId } from "mongodb";
 import BlogStudioClient from "./BlogStudioClient";
 import { getBlogsCollection } from "@/lib/blog";
 
@@ -15,11 +16,11 @@ export const metadata: Metadata = {
 };
 
 interface BlogStudioPageProps {
-  searchParams: Promise<{ key?: string }>;
+  searchParams: Promise<{ key?: string; edit?: string }>;
 }
 
 export default async function BlogStudioPage({ searchParams }: BlogStudioPageProps) {
-  const { key } = await searchParams;
+  const { key, edit } = await searchParams;
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("studio_session")?.value;
   const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
@@ -49,12 +50,14 @@ export default async function BlogStudioPage({ searchParams }: BlogStudioPagePro
     updatedAt: string;
   }> = [];
 
+  let initialSelectedBlog: (typeof initialBlogs)[0] | null = null;
+
   try {
     const blogsCol = await getBlogsCollection();
     const rawDocs = await blogsCol
       .find({})
       .sort({ updatedAt: -1, createdAt: -1 })
-      .limit(10)
+      .limit(20)
       .toArray();
 
     initialBlogs = rawDocs.map((doc) => ({
@@ -71,6 +74,44 @@ export default async function BlogStudioPage({ searchParams }: BlogStudioPagePro
       createdAt: doc.createdAt.toISOString(),
       updatedAt: doc.updatedAt.toISOString(),
     }));
+
+    if (edit) {
+      const trimmedEdit = edit.trim();
+      const matched = initialBlogs.find(
+        (b) => b.slug === trimmedEdit || b.id === trimmedEdit
+      );
+
+      if (matched) {
+        initialSelectedBlog = matched;
+      } else {
+        const queryFilter = ObjectId.isValid(trimmedEdit)
+          ? { _id: new ObjectId(trimmedEdit) }
+          : { slug: trimmedEdit };
+        const singleDoc = await blogsCol.findOne(queryFilter);
+        if (singleDoc) {
+          initialSelectedBlog = {
+            id: singleDoc._id!.toString(),
+            title: singleDoc.title,
+            slug: singleDoc.slug,
+            description: singleDoc.description || "",
+            status: singleDoc.status,
+            tags: singleDoc.tags || [],
+            readingTimeMinutes: singleDoc.readingTimeMinutes || 1,
+            coverImage: singleDoc.coverImage || "",
+            content: singleDoc.content,
+            publishedAt: singleDoc.publishedAt
+              ? singleDoc.publishedAt.toISOString()
+              : undefined,
+            createdAt: singleDoc.createdAt.toISOString(),
+            updatedAt: singleDoc.updatedAt.toISOString(),
+          };
+          // Prepend to list if not present
+          if (!initialBlogs.some((b) => b.id === initialSelectedBlog!.id)) {
+            initialBlogs.unshift(initialSelectedBlog);
+          }
+        }
+      }
+    }
   } catch (err) {
     console.error("Failed to fetch initial blog studio data:", err);
   }
@@ -78,6 +119,7 @@ export default async function BlogStudioPage({ searchParams }: BlogStudioPagePro
   return (
     <BlogStudioClient
       initialBlogs={initialBlogs}
+      initialSelectedBlog={initialSelectedBlog}
       initialKey={key}
     />
   );

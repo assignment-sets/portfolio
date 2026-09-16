@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -6,7 +7,7 @@ import Footer from "@/components/Footer";
 import BlogShareButton from "@/components/BlogShareButton";
 import { getBlogPostBySlug } from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
-import { ArrowLeft, Clock, Calendar } from "lucide-react";
+import { ArrowLeft, Clock, Calendar, Edit3 } from "lucide-react";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -60,6 +61,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("studio_session")?.value;
+  const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
+  const isAuthor = Boolean(studioSecret) && sessionToken === studioSecret;
+
   const projects = await getFeaturedProjects();
 
   const formattedDate = post.publishedAt
@@ -85,12 +91,24 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <ArrowLeft size={15} />
               <span>Back to all posts</span>
             </Link>
-            <BlogShareButton
-              title={post.title}
-              slug={post.slug}
-              description={post.description}
-              variant="header"
-            />
+            <div className="blog-header-actions">
+              {isAuthor && (
+                <Link
+                  href={`/studio/blog?edit=${post.slug}`}
+                  className="blog-edit-admin-btn"
+                  title="Edit post in Blog Studio"
+                >
+                  <Edit3 size={13} />
+                  <span>Edit Post</span>
+                </Link>
+              )}
+              <BlogShareButton
+                title={post.title}
+                slug={post.slug}
+                description={post.description}
+                variant="header"
+              />
+            </div>
           </div>
 
           {/* Article Header */}

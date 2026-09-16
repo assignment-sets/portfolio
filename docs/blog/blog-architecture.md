@@ -87,10 +87,12 @@ To prevent administrative interface discovery by web crawlers or unauthorized vi
 
 ### Studio Capabilities
 - **Split Live Editor**: Side-by-side authoring pane with Markdown input, real-time word count, reading time calculator, and live rendered preview.
-- **Publishing Lifecycle**: One-click transition between `"draft"` (private) and `"published"` (public).
+- **Publishing & Updating Lifecycle**: Full editing lifecycle for existing posts — live updating ("Update Live"), unpublishing back to draft ("Unpublish to Draft"), and one-click publishing ("Publish Live").
+- **Deep-Link URL Editing**: Direct loading into editor via `/studio/blog?edit=<slug_or_id>`.
+- **Public Reader Quick-Edit**: Authenticated author shortcut on `/blog/[slug]` ("Edit Post") routing directly into the split editor.
 - **Slug Management**: Auto-generates clean slugs from titles with collision detection (`slug-1`, `slug-2`).
 - **Unified Studio Navigation**: Header toggle switches seamlessly between Newsletter Studio (`/studio`) and Blog Studio (`/studio/blog`).
-- **Post Management & Search**: Side panel with real-time text query filtering, status filters (`All`, `Published`, `Drafts`), and post deletion.
+- **Post Management & Search**: Side panel with real-time text query filtering, dedicated edit/delete buttons per post, and status filters.
 
 ---
 

@@ -34,13 +34,11 @@ export function slugify(text: string): string {
     .replace(/-+$/, ""); // Trim - from end of text
 }
 
-/**
- * Estimates reading time in minutes based on 200 words per minute.
- */
-export function calculateReadingTime(markdownText: string): number {
-  const words = markdownText.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 200));
-}
+export {
+  calculateReadingTime,
+  calculateReadingTimeDetails,
+  type ReadingTimeStats,
+} from "./reading-time";
 
 /**
  * Returns the MongoDB `blogs` collection with unique slug and status indexes.

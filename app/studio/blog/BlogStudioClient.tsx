@@ -22,6 +22,7 @@ import {
   Mail,
   ArrowLeft,
 } from "lucide-react";
+import { calculateReadingTimeDetails } from "@/lib/reading-time";
 
 interface BlogItem {
   id: string;
@@ -592,10 +593,19 @@ export default function BlogStudioClient({
                   rows={20}
                   className="studio-textarea"
                 />
-                <div className="studio-textarea-footer">
-                  <span>GFM, code blocks, tables, lists supported</span>
-                  <span>{markdown.length} chars &middot; ~{Math.max(1, Math.ceil(markdown.split(/\s+/).filter(Boolean).length / 200))} min read</span>
-                </div>
+                {(() => {
+                  const stats = calculateReadingTimeDetails(markdown);
+                  return (
+                    <div className="studio-textarea-footer">
+                      <span>GFM, code blocks, tables, lists supported</span>
+                      <span>
+                        {stats.wordCount.toLocaleString()} words &middot; ~{stats.minutes} min read
+                        {stats.imageCount > 0 ? ` · ${stats.imageCount} img` : ""}
+                        {stats.codeBlockCount > 0 ? ` · ${stats.codeBlockCount} code` : ""}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               <div className="studio-preview-pane">

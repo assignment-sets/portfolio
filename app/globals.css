@@ -2668,45 +2668,6 @@ footer {
 
 
 
-/* ==========================================================================
-   Centered Page Transition Loader
-   ========================================================================== */
-.page-loader-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 10, 10, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  animation: pageLoaderFadeIn 0.12s ease-out;
-  pointer-events: all;
-}
-
-[data-theme="light"] .page-loader-overlay {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.page-loader-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--border-strong);
-  border-top-color: var(--text);
-  border-radius: 50%;
-  animation: pageLoaderSpin 0.65s linear infinite;
-}
-
-@keyframes pageLoaderFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes pageLoaderSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
 
 /* ==========================================================================
    Studio Control Center Hub Dashboard

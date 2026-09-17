@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import {
   getAvailabilityStatus,
   setAvailabilityStatus,
@@ -75,8 +75,9 @@ export async function POST(req: NextRequest) {
       newStatus = await toggleAvailabilityStatus();
     }
 
-    // Instantly purge ISR cache so changes appear on homepage immediately
+    // Instantly purge ISR cache and tags so changes appear on homepage immediately
     try {
+      revalidateTag("availability", "max");
       revalidatePath("/");
       revalidatePath("/llms.txt");
     } catch {

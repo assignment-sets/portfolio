@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { getDb } from "./mongodb";
 
 export interface SettingDocument {
@@ -34,6 +35,18 @@ export async function getAvailabilityStatus(): Promise<boolean> {
     return true;
   }
 }
+
+/**
+ * Cached version of getAvailabilityStatus with 1-hour fallback TTL.
+ */
+export const getCachedAvailabilityStatus = unstable_cache(
+  async () => getAvailabilityStatus(),
+  ["availability-status"],
+  {
+    tags: ["settings", "availability"],
+    revalidate: 3600,
+  }
+);
 
 /**
  * Sets the global "Available for work" status.

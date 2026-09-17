@@ -1,6 +1,6 @@
 import { portfolioData, type Project } from "@/data/portfolio";
 import { getFeaturedProjects } from "@/lib/github";
-import { getAvailabilityStatus } from "@/lib/settings";
+import { getCachedAvailabilityStatus } from "@/lib/settings";
 
 function generateLlmsTxt(projects: Project[], isAvailable: boolean): string {
   const lines: string[] = [];
@@ -66,7 +66,7 @@ function generateLlmsTxt(projects: Project[], isAvailable: boolean): string {
 export async function GET() {
   const [projects, isAvailable] = await Promise.all([
     getFeaturedProjects(),
-    getAvailabilityStatus(),
+    getCachedAvailabilityStatus(),
   ]);
   const content = generateLlmsTxt(projects, isAvailable);
 

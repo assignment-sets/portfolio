@@ -7,12 +7,12 @@ import Education from "@/components/Education";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import { getFeaturedProjects } from "@/lib/github";
-import { getAvailabilityStatus } from "@/lib/settings";
+import { getCachedAvailabilityStatus } from "@/lib/settings";
 
 export default async function Home() {
   const [projects, isAvailable] = await Promise.all([
     getFeaturedProjects(),
-    getAvailabilityStatus(),
+    getCachedAvailabilityStatus(),
   ]);
 
   return (

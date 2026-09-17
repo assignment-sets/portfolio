@@ -5,9 +5,21 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BlogShareButton from "@/components/BlogShareButton";
-import { getBlogPostBySlug } from "@/lib/blog";
+import {
+  getCachedBlogPostBySlug,
+  getPublishedBlogSlugs,
+  formatBlogDate,
+  toIsoDateString,
+} from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
 import { ArrowLeft, Clock, Calendar, Edit3 } from "lucide-react";
+
+export const revalidate = 86400; // 24-hour ISR edge cache fallback
+
+export async function generateStaticParams() {
+  const slugs = await getPublishedBlogSlugs().catch(() => []);
+  return slugs.map((slug) => ({ slug }));
+}
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -17,7 +29,7 @@ export async function generateMetadata({
   params,
 }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getBlogPostBySlug(slug);
+  const post = await getCachedBlogPostBySlug(slug);
 
   if (!post || post.status !== "published") {
     return {
@@ -30,6 +42,8 @@ export async function generateMetadata({
     post.description ||
     `Read ${post.title} on Gourab Mondal's technical engineering blog.`;
 
+  const publishedIso = toIsoDateString(post.publishedAt || post.createdAt);
+
   return {
     title,
     description,
@@ -40,7 +54,7 @@ export async function generateMetadata({
       title,
       description,
       type: "article",
-      publishedTime: post.publishedAt?.toISOString(),
+      publishedTime: publishedIso,
       authors: ["Gourab Mondal"],
       tags: post.tags,
     },
@@ -54,7 +68,7 @@ export async function generateMetadata({
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const post = await getBlogPostBySlug(slug);
+  const post = await getCachedBlogPostBySlug(slug);
 
   // If post does not exist or is in draft state, return genuine 404
   if (!post || post.status !== "published") {
@@ -68,17 +82,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const projects = await getFeaturedProjects();
 
-  const formattedDate = post.publishedAt
-    ? new Date(post.publishedAt).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
-    : new Date(post.createdAt).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      });
+  const formattedDate = formatBlogDate(post.publishedAt || post.createdAt, "long");
+  const isoDate = toIsoDateString(post.publishedAt || post.createdAt);
 
   return (
     <>
@@ -118,9 +123,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <div className="blog-meta-row">
               <div className="blog-meta-item">
                 <Calendar size={14} />
-                <time dateTime={post.publishedAt?.toISOString() || post.createdAt.toISOString()}>
-                  {formattedDate}
-                </time>
+                <time dateTime={isoDate}>{formattedDate}</time>
               </div>
 
               <span className="blog-meta-sep">&middot;</span>

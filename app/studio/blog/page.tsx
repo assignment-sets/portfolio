@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { ObjectId } from "mongodb";
 import BlogStudioClient from "./BlogStudioClient";
-import { getBlogsCollection } from "@/lib/blog";
+import { getBlogsCollection, toIsoDateString } from "@/lib/blog";
 
 export const dynamic = "force-dynamic";
 
@@ -70,9 +70,9 @@ export default async function BlogStudioPage({ searchParams }: BlogStudioPagePro
       readingTimeMinutes: doc.readingTimeMinutes || 1,
       coverImage: doc.coverImage || "",
       content: doc.content,
-      publishedAt: doc.publishedAt ? doc.publishedAt.toISOString() : undefined,
-      createdAt: doc.createdAt.toISOString(),
-      updatedAt: doc.updatedAt.toISOString(),
+      publishedAt: doc.publishedAt ? toIsoDateString(doc.publishedAt) : undefined,
+      createdAt: toIsoDateString(doc.createdAt),
+      updatedAt: toIsoDateString(doc.updatedAt),
     }));
 
     if (edit) {
@@ -100,10 +100,10 @@ export default async function BlogStudioPage({ searchParams }: BlogStudioPagePro
             coverImage: singleDoc.coverImage || "",
             content: singleDoc.content,
             publishedAt: singleDoc.publishedAt
-              ? singleDoc.publishedAt.toISOString()
+              ? toIsoDateString(singleDoc.publishedAt)
               : undefined,
-            createdAt: singleDoc.createdAt.toISOString(),
-            updatedAt: singleDoc.updatedAt.toISOString(),
+            createdAt: toIsoDateString(singleDoc.createdAt),
+            updatedAt: toIsoDateString(singleDoc.updatedAt),
           };
           // Prepend to list if not present
           if (!initialBlogs.some((b) => b.id === initialSelectedBlog!.id)) {

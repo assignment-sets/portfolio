@@ -4,7 +4,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BlogCardLink from "@/components/BlogCardLink";
 import BlogSearchBar from "@/components/BlogSearchBar";
-import { getPublishedBlogPosts } from "@/lib/blog";
+import {
+  getCachedPublishedBlogPosts,
+  formatBlogDate,
+  toIsoDateString,
+} from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 
@@ -24,7 +28,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // 1-hour ISR edge cache fallback
 
 interface BlogIndexPageProps {
   searchParams?: Promise<{ page?: string; q?: string; tag?: string }>;
@@ -43,7 +47,7 @@ export default async function BlogIndexPage({
   const pageSize = 10;
 
   const [data, projects] = await Promise.all([
-    getPublishedBlogPosts({
+    getCachedPublishedBlogPosts({
       page: currentPage,
       limit: pageSize,
       query: searchQuery || undefined,
@@ -118,29 +122,18 @@ export default async function BlogIndexPage({
           ) : (
             <div className="blog-cards-grid">
               {posts.map((post) => {
-                const formattedDate = post.publishedAt
-                  ? new Date(post.publishedAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                  : new Date(post.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    });
+                const formattedDate = formatBlogDate(
+                  post.publishedAt || post.createdAt,
+                  "short"
+                );
+                const isoDate = toIsoDateString(
+                  post.publishedAt || post.createdAt
+                );
 
                 return (
                   <article key={post.slug} className="blog-card">
                     <div className="blog-card-meta">
-                      <time
-                        dateTime={
-                          post.publishedAt?.toISOString() ||
-                          post.createdAt.toISOString()
-                        }
-                      >
-                        {formattedDate}
-                      </time>
+                      <time dateTime={isoDate}>{formattedDate}</time>
                       <span className="blog-card-dot">&middot;</span>
                       <span>{post.readingTimeMinutes || 1} min read</span>
                     </div>

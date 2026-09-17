@@ -1,9 +1,10 @@
 import { ObjectId } from "mongodb";
 import { marked } from "marked";
+import { unstable_cache } from "next/cache";
 import { getDb } from "./mongodb";
 
 export interface BlogPost {
-  _id?: ObjectId;
+  _id?: ObjectId | string;
   title: string;
   slug: string;
   description?: string;
@@ -41,6 +42,32 @@ export {
 } from "./reading-time";
 
 /**
+ * Safely converts Date | string | null to an ISO-8601 string.
+ */
+export function toIsoDateString(date?: Date | string | null): string {
+  if (!date) return "";
+  if (typeof date === "string") return date;
+  if (date instanceof Date) return date.toISOString();
+  return new Date(date).toISOString();
+}
+
+/**
+ * Safely formats Date | string | null to human-readable format.
+ */
+export function formatBlogDate(
+  date?: Date | string | null,
+  format: "short" | "long" = "short"
+): string {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString("en-US", {
+    month: format === "long" ? "long" : "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+/**
  * Returns the MongoDB `blogs` collection with unique slug and status indexes.
  */
 export async function getBlogsCollection() {
@@ -63,6 +90,33 @@ export async function renderBlogMarkdown(content: string): Promise<string> {
 }
 
 /**
+ * Retrieves all published blog slugs for static generation (SSG) and dynamic sitemaps.
+ */
+export async function getPublishedBlogSlugs(): Promise<string[]> {
+  try {
+    const collection = await getBlogsCollection();
+    const docs = await collection
+      .find({ status: "published" }, { projection: { slug: 1 } })
+      .toArray();
+    return docs.map((d) => d.slug).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Cached version of getPublishedBlogSlugs with 24-hour fallback TTL.
+ */
+export const getCachedPublishedBlogSlugs = unstable_cache(
+  async () => getPublishedBlogSlugs(),
+  ["published-blog-slugs"],
+  {
+    tags: ["blogs", "blog-slugs"],
+    revalidate: 86400,
+  }
+);
+
+/**
  * Retrieves a single blog post by slug.
  * If not previewing a draft, only returns published posts.
  */
@@ -77,6 +131,28 @@ export async function getBlogPostBySlug(
   }
   return collection.findOne(query);
 }
+
+/**
+ * Cached version of getBlogPostBySlug with on-demand tag invalidation.
+ */
+export const getCachedBlogPostBySlug = unstable_cache(
+  async (slug: string): Promise<BlogPost | null> => {
+    const doc = await getBlogPostBySlug(slug, false);
+    if (!doc) return null;
+    return {
+      ...doc,
+      _id: doc._id?.toString(),
+      publishedAt: doc.publishedAt ? new Date(doc.publishedAt) : undefined,
+      createdAt: new Date(doc.createdAt),
+      updatedAt: new Date(doc.updatedAt),
+    };
+  },
+  ["blog-post-by-slug"],
+  {
+    tags: ["blogs", "blog-posts"],
+    revalidate: 86400,
+  }
+);
 
 export interface PaginatedBlogPosts {
   posts: BlogPost[];
@@ -233,7 +309,10 @@ export async function getPublishedBlogPosts(options?: {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return {
-    posts,
+    posts: posts.map((p) => ({
+      ...p,
+      _id: p._id?.toString(),
+    })),
     total,
     page,
     pageSize: limit,
@@ -241,4 +320,47 @@ export async function getPublishedBlogPosts(options?: {
     hasNextPage: page < totalPages,
     hasPrevPage: page > 1,
   };
+}
+
+const getCachedPublishedBlogPostsInternal = unstable_cache(
+  async (page: number, limit: number, tag?: string): Promise<PaginatedBlogPosts> => {
+    const res = await getPublishedBlogPosts({ page, limit, tag });
+    return {
+      ...res,
+      posts: res.posts.map((p) => ({
+        ...p,
+        _id: p._id?.toString(),
+        publishedAt: p.publishedAt ? new Date(p.publishedAt) : undefined,
+        createdAt: new Date(p.createdAt),
+        updatedAt: new Date(p.updatedAt),
+      })),
+    };
+  },
+  ["published-blog-posts-feed"],
+  {
+    tags: ["blogs", "blog-feed"],
+    revalidate: 3600,
+  }
+);
+
+/**
+ * Cached version of getPublishedBlogPosts.
+ * Bypasses cache when a search query is active to ensure instant live Lucene search results.
+ */
+export async function getCachedPublishedBlogPosts(options?: {
+  tag?: string;
+  query?: string;
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedBlogPosts> {
+  // If search query is present, bypass cache and run live Atlas search
+  if (options?.query?.trim()) {
+    return getPublishedBlogPosts(options);
+  }
+
+  const page = Math.max(1, options?.page || 1);
+  const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+  const tag = options?.tag?.trim() || undefined;
+
+  return getCachedPublishedBlogPostsInternal(page, limit, tag);
 }

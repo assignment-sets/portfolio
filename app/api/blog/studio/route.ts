@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { ObjectId } from "mongodb";
 import {
   getBlogsCollection,
   renderBlogMarkdown,
   slugify,
   calculateReadingTime,
+  toIsoDateString,
   BlogPost,
 } from "@/lib/blog";
 
@@ -95,9 +97,9 @@ export async function POST(req: NextRequest) {
         readingTimeMinutes: doc.readingTimeMinutes || 1,
         coverImage: doc.coverImage || "",
         content: doc.content,
-        publishedAt: doc.publishedAt ? doc.publishedAt.toISOString() : undefined,
-        createdAt: doc.createdAt.toISOString(),
-        updatedAt: doc.updatedAt.toISOString(),
+        publishedAt: doc.publishedAt ? toIsoDateString(doc.publishedAt) : undefined,
+        createdAt: toIsoDateString(doc.createdAt),
+        updatedAt: toIsoDateString(doc.updatedAt),
       }));
 
       return NextResponse.json({ success: true, blogs: formatted });
@@ -118,9 +120,23 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Valid blogId is required." }, { status: 400 });
       }
 
-      const res = await blogsCol.deleteOne({ _id: new ObjectId(blogId) });
-      if (res.deletedCount === 0) {
+      const existing = await blogsCol.findOne({ _id: new ObjectId(blogId) });
+      if (!existing) {
         return NextResponse.json({ error: "Blog post not found." }, { status: 404 });
+      }
+
+      await blogsCol.deleteOne({ _id: new ObjectId(blogId) });
+
+      // Synchronously invalidate edge cache and sitemap
+      try {
+        revalidateTag("blogs", "max");
+        revalidatePath("/blog");
+        if (existing.slug) {
+          revalidatePath(`/blog/${existing.slug}`);
+        }
+        revalidatePath("/sitemap.xml");
+      } catch (cacheErr) {
+        console.error("Failed to revalidate cache on delete:", cacheErr);
       }
 
       return NextResponse.json({
@@ -196,6 +212,19 @@ export async function POST(req: NextRequest) {
           }
         );
 
+        // Synchronously invalidate edge cache and sitemap
+        try {
+          revalidateTag("blogs", "max");
+          revalidatePath("/blog");
+          revalidatePath(`/blog/${finalSlug}`);
+          if (existing?.slug && existing.slug !== finalSlug) {
+            revalidatePath(`/blog/${existing.slug}`);
+          }
+          revalidatePath("/sitemap.xml");
+        } catch (cacheErr) {
+          console.error("Failed to revalidate cache on update:", cacheErr);
+        }
+
         return NextResponse.json({
           success: true,
           action,
@@ -222,6 +251,16 @@ export async function POST(req: NextRequest) {
       };
 
       const insertResult = await blogsCol.insertOne(newPost);
+
+      // Synchronously invalidate edge cache and sitemap
+      try {
+        revalidateTag("blogs", "max");
+        revalidatePath("/blog");
+        revalidatePath(`/blog/${finalSlug}`);
+        revalidatePath("/sitemap.xml");
+      } catch (cacheErr) {
+        console.error("Failed to revalidate cache on insert:", cacheErr);
+      }
 
       return NextResponse.json({
         success: true,

@@ -1,7 +1,7 @@
 // Service Worker for Gourab Mondal Portfolio
-// Provides offline caching for static shell, fonts, and assets with Network-First strategy.
+// Provides minimal offline caching for static shell, favicons, and core assets with Network-First strategy.
 
-const CACHE_NAME = "portfolio-cache-v1";
+const CACHE_NAME = "portfolio-cache-v2";
 
 const PRECACHE_ASSETS = [
   "/",
@@ -45,22 +45,34 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests
   if (req.method !== "GET") return;
 
-  // Never cache API routes, Studio routes, or Google Analytics telemetry
+  // Never cache API routes, Studio routes, Blog routes, or Google Analytics telemetry
   if (
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/studio") ||
+    url.pathname.startsWith("/blog") ||
     url.hostname.includes("google-analytics") ||
     url.hostname.includes("googletagmanager")
   ) {
     return;
   }
 
-  // 1. Navigation requests (HTML pages): Network-First with Cache Fallback
+  // Never intercept Next.js App Router RSC (React Server Component) soft-navigation or prefetch requests.
+  // Letting the browser handle these directly ensures that streaming component trees never hang or clash with HTML cache entries.
+  if (
+    req.headers.get("RSC") === "1" ||
+    req.headers.has("Next-Router-State-Tree") ||
+    req.headers.has("Next-Router-Prefetch") ||
+    url.searchParams.has("_rsc")
+  ) {
+    return;
+  }
+
+  // 1. Navigation requests (HTML pages): Network-First with Cache Fallback (for root shell)
   if (req.mode === "navigate") {
     event.respondWith(
       fetch(req)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
+          if (networkResponse && networkResponse.status === 200 && url.pathname === "/") {
             const copy = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
           }
@@ -82,7 +94,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2. Static Assets (JS, CSS, images, fonts): Stale-While-Revalidate
+  // 2. Static Assets (JS, CSS, images, fonts under _next/static or file extensions): Stale-While-Revalidate
+  const isStaticAsset =
+    url.pathname.startsWith("/_next/static/") ||
+    /\.(?:css|js|mjs|woff2?|ttf|eot|png|jpe?g|gif|svg|ico|webp|webmanifest)$/i.test(
+      url.pathname
+    );
+
+  if (!isStaticAsset) {
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then((cachedResponse) => {
       const fetchPromise = fetch(req)

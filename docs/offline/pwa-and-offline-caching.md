@@ -38,9 +38,9 @@ flowchart TD
   - `/favicon.gif`
   - `/apple-touch-icon.png`
   - `/llms.txt`
-- **Network-First for HTML**: Guarantees visitors always receive fresh SSR data when online, while ensuring seamless offline fallbacks.
-- **Stale-While-Revalidate for Assets**: Eliminates asset loading latency.
-- **API Bypassing**: Explicitly ignores `/api/*` and analytics endpoints to avoid stale form state.
+- **Network-First for HTML**: Guarantees visitors always receive fresh SSR data when online, while ensuring seamless offline fallbacks for the primary portfolio root (`/`).
+- **Stale-While-Revalidate for Assets**: Restricts caching strictly to real static assets (`/_next/static/*`, CSS, JS, fonts, images).
+- **RSC & Route Bypassing**: Explicitly bypasses all Next.js React Server Component requests (`RSC`, `Next-Router-State-Tree`, `Next-Router-Prefetch`, `_rsc`), `/blog/*`, `/studio/*`, and `/api/*` to guarantee seamless client-side page transitions without stream locking.
 
 ### 2. Client Registration: [`components/ServiceWorkerRegister.tsx`](../../components/ServiceWorkerRegister.tsx)
 - Automatically registers `/sw.js` in production mode.

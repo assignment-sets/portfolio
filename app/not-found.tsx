@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Compass } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import NotFoundVisual from "@/components/NotFoundVisual";
@@ -22,9 +22,9 @@ export default function NotFound() {
               <ArrowLeft size={14} />
               Return Home
             </Link>
-            <Link href="/#projects">
-              <Compass size={14} />
-              Explore Projects
+            <Link href="/blog">
+              <BookOpen size={14} />
+              Explore Blogs
             </Link>
             <Link href="/#contact">Get in Touch &rarr;</Link>
           </div>

@@ -257,10 +257,18 @@ export default function Footer({
         {/* Sub-Footer Row */}
         <div className="footer-bottom">
           <span>&copy; 2026 {portfolioData.name}. All rights reserved.</span>
-          <Link href="/#hero" className="footer-back-to-top">
+          <button
+            type="button"
+            onClick={() => {
+              trackEvent("scroll_top_click", { location: "footer" });
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="footer-back-to-top"
+            aria-label="Back to top of page"
+          >
             <span>Back to top</span>
             <ArrowUp size={13} />
-          </Link>
+          </button>
         </div>
       </div>
     </footer>

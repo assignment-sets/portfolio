@@ -93,7 +93,7 @@ export async function renderNewsletterEmail(
               <div style="margin-top: 36px; padding-top: 20px; border-top: 1px solid #f3f4f6; font-size: 14px; color: #4b5563;">
                 <p style="margin: 0 0 4px 0;">Best,</p>
                 <p style="margin: 0; font-weight: 600; color: #111827;">Gourab Mondal</p>
-                <p style="margin: 2px 0 0 0; font-size: 12px; color: #6b7280;">Backend & Systems Engineer &middot; Bangalore, IN</p>
+                <p style="margin: 2px 0 0 0; font-size: 12px; color: #6b7280;">Backend & Systems Engineer &middot; Kolkata, IN</p>
               </div>
             </td>
           </tr>

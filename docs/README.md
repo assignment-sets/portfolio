@@ -46,6 +46,11 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 - [**Offline Architecture & PWA Caching**](offline/pwa-and-offline-caching.md)
   - Details the native Service Worker (`public/sw.js`), Network-First HTML caching, Next.js 16 Web App Manifest (`app/manifest.ts`), and React 19 `useSyncExternalStore` offline indicator.
 
+### Performance & Caching
+
+- [**Caching & Revalidation Architecture**](caching/caching-and-revalidation.md)
+  - Details the 5-layer multi-tiered caching topology, Next.js Data Cache (`unstable_cache`), background ISR policies, on-demand tag invalidation (`revalidateTag`), dynamic sitemap caching, and MongoDB connection pooling.
+
 ---
 
 ## Quick Testing Cheatsheet

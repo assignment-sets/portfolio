@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BlogShareButton from "@/components/BlogShareButton";
+import BlogEditButton from "@/components/BlogEditButton";
 import {
   getCachedBlogPostBySlug,
   getPublishedBlogSlugs,
@@ -12,7 +12,7 @@ import {
   toIsoDateString,
 } from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
-import { ArrowLeft, Clock, Calendar, Edit3 } from "lucide-react";
+import { ArrowLeft, Clock, Calendar } from "lucide-react";
 
 export const revalidate = 86400; // 24-hour ISR edge cache fallback
 
@@ -75,11 +75,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("studio_session")?.value;
-  const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
-  const isAuthor = Boolean(studioSecret) && sessionToken === studioSecret;
-
   const projects = await getFeaturedProjects();
 
   const formattedDate = formatBlogDate(post.publishedAt || post.createdAt, "long");
@@ -97,16 +92,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <span>Back to all posts</span>
             </Link>
             <div className="blog-header-actions">
-              {isAuthor && (
-                <Link
-                  href={`/studio/blog?edit=${post.slug}`}
-                  className="blog-edit-admin-btn"
-                  title="Edit post in Blog Studio"
-                >
-                  <Edit3 size={13} />
-                  <span>Edit Post</span>
-                </Link>
-              )}
+              <BlogEditButton slug={post.slug} />
               <BlogShareButton
                 title={post.title}
                 slug={post.slug}

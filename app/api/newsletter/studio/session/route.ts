@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
+export async function GET() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("studio_session")?.value;
+  const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
+  const authenticated = Boolean(studioSecret) && sessionToken === studioSecret;
+  return NextResponse.json({ authenticated });
+}
+
 export async function POST(req: NextRequest) {
   const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
   if (!studioSecret) {

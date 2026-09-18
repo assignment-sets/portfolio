@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPublishedBlogPosts } from "@/lib/blog";
+import { getCachedPublishedBlogPosts } from "@/lib/blog";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,17 +12,31 @@ export async function GET(req: NextRequest) {
     const tag = searchParams.get("tag") || undefined;
     const query = searchParams.get("q") || undefined;
 
-    const data = await getPublishedBlogPosts({
+    const data = await getCachedPublishedBlogPosts({
       page,
       limit,
       tag,
       query,
     });
 
-    return NextResponse.json({
-      success: true,
-      ...data,
-    });
+    const isSearch = Boolean(query?.trim());
+    const cacheControl = isSearch
+      ? "private, no-cache, no-store, max-age=0, must-revalidate"
+      : "public, s-maxage=3600, stale-while-revalidate=86400";
+
+    return NextResponse.json(
+      {
+        success: true,
+        ...data,
+      },
+      {
+        headers: {
+          "Cache-Control": cacheControl,
+          "CDN-Cache-Control": cacheControl,
+          "Vercel-CDN-Cache-Control": cacheControl,
+        },
+      }
+    );
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Failed to fetch blog posts";

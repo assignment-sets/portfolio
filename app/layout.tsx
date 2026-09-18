@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import ThemeInitScript from "@/components/ThemeInitScript";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import OfflineNotice from "@/components/OfflineNotice";
+import NavigationLoader from "@/components/NavigationLoader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -161,6 +163,9 @@ export default function RootLayout({
       </head>
       <body>
         <ServiceWorkerRegister />
+        <Suspense fallback={null}>
+          <NavigationLoader />
+        </Suspense>
         {children}
         <OfflineNotice />
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />

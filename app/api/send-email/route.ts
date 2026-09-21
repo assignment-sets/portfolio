@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { z } from "zod";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkFirewallRateLimit, getClientIp } from "@/lib/rate-limit";
 
 // Zod Validation Schema
 const contactSchema = z.object({
@@ -52,32 +52,20 @@ function escapeHtml(str: string): string {
 }
 
 export async function POST(req: Request) {
-  // 1. In-memory Rate Limiting (5 requests per hour per IP)
-  const clientIp = getClientIp(req);
-  const rateLimit = checkRateLimit(clientIp, {
-    limit: 5,
-    windowMs: 60 * 60 * 1000,
-  });
-
+  // 1. Rate Limiting via Vercel Firewall (5 req / 3600s per IP)
+  const rateLimit = await checkFirewallRateLimit(req);
   if (!rateLimit.success) {
     return NextResponse.json(
       {
-        error: "Too many requests from this IP. Please try again later.",
+        error:
+          rateLimit.error ||
+          "Too many requests from this IP. Please try again later.",
       },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Limit": rateLimit.limit.toString(),
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": rateLimit.reset.toString(),
-          "Retry-After": Math.max(
-            1,
-            rateLimit.reset - Math.floor(Date.now() / 1000)
-          ).toString(),
-        },
-      }
+      { status: 429 }
     );
   }
+
+  const clientIp = getClientIp(req);
 
   // 2. Parse & Validate Payload
   let body: unknown;

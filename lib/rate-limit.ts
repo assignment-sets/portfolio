@@ -1,88 +1,81 @@
-interface RateLimitRecord {
-  count: number;
-  resetTime: number;
-}
+import { checkRateLimit as checkVercelRateLimit } from "@vercel/firewall";
 
-const rateLimitStore = new Map<string, RateLimitRecord>();
+export const VERCEL_FIREWALL_RULE_ID =
+  process.env.VERCEL_FIREWALL_RULE_ID ||
+  "rule_rate_limit_email_endpoints_l0RL18";
 
-// Clean up expired entries every 10 minutes to prevent memory leaks
-if (typeof setInterval !== "undefined") {
-  const cleanupTimer = setInterval(() => {
-    const now = Date.now();
-    for (const [ip, record] of rateLimitStore.entries()) {
-      if (now > record.resetTime) {
-        rateLimitStore.delete(ip);
-      }
-    }
-  }, 10 * 60 * 1000);
-
-  // Unref timer so it does not block Node process exit
-  if (typeof cleanupTimer.unref === "function") {
-    cleanupTimer.unref();
-  }
-}
-
-export interface RateLimitOptions {
-  limit?: number; // max submissions
-  windowMs?: number; // time window in milliseconds
-}
-
-export interface RateLimitResult {
+export interface FirewallRateLimitResult {
   success: boolean;
-  limit: number;
-  remaining: number;
-  reset: number;
+  error?: string;
 }
 
-export function checkRateLimit(
-  ip: string,
-  options: RateLimitOptions = {}
-): RateLimitResult {
-  const limit = options.limit ?? 5;
-  const windowMs = options.windowMs ?? 60 * 60 * 1000; // 1 hour default
-  const now = Date.now();
-
-  const record = rateLimitStore.get(ip);
-
-  if (!record || now > record.resetTime) {
-    rateLimitStore.set(ip, {
-      count: 1,
-      resetTime: now + windowMs,
+/**
+ * Rate Limiting via Vercel Firewall:
+ * Relies on Vercel WAF rule `rule_rate_limit_email_endpoints_l0RL18` configured at the edge.
+ * In production on Vercel, WAF blocks exceeding requests directly at the edge (5 req / 3600s).
+ * Programmatic check provides defense-in-depth within the route handler.
+ * In local development, gracefully returns { success: true }.
+ */
+export async function checkFirewallRateLimit(
+  req: Request,
+  ruleId: string = VERCEL_FIREWALL_RULE_ID
+): Promise<FirewallRateLimitResult> {
+  try {
+    const { rateLimited } = await checkVercelRateLimit(ruleId, {
+      request: req,
     });
-    return {
-      success: true,
-      limit,
-      remaining: limit - 1,
-      reset: Math.ceil((now + windowMs) / 1000),
-    };
+    if (rateLimited) {
+      return {
+        success: false,
+        error: "Too many requests from this IP. Please try again later.",
+      };
+    }
+  } catch {
+    // Non-fatal: if outside Vercel or misconfigured, don't crash
   }
-
-  if (record.count >= limit) {
-    return {
-      success: false,
-      limit,
-      remaining: 0,
-      reset: Math.ceil(record.resetTime / 1000),
-    };
-  }
-
-  record.count += 1;
-  return {
-    success: true,
-    limit,
-    remaining: limit - record.count,
-    reset: Math.ceil(record.resetTime / 1000),
-  };
+  return { success: true };
 }
 
+/**
+ * Hardened client IP extraction for logging and audit.
+ * Reverse proxies (Vercel Edge, Cloudflare, Nginx) strip or overwrite `x-real-ip` with the actual client IP,
+ * and append the real client IP to the END of `x-forwarded-for`.
+ */
 export function getClientIp(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
+  // 1. Most trusted: x-real-ip is set by the edge reverse proxy and cannot be spoofed by clients
   const realIp = req.headers.get("x-real-ip");
-  if (realIp) {
+  if (realIp && realIp.trim()) {
     return realIp.trim();
   }
+
+  // 2. Vercel specific headers
+  const vercelIp = req.headers.get("x-vercel-ip");
+  if (vercelIp && vercelIp.trim()) {
+    return vercelIp.trim();
+  }
+
+  const vercelForwardedFor = req.headers.get("x-vercel-forwarded-for");
+  if (vercelForwardedFor) {
+    const parts = vercelForwardedFor
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length > 0) {
+      return parts[parts.length - 1];
+    }
+  }
+
+  // 3. Standard x-forwarded-for: the outermost reverse proxy appends the real IP to the end of the chain.
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const parts = forwarded
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length > 0) {
+      return parts[parts.length - 1];
+    }
+  }
+
   return "127.0.0.1";
 }

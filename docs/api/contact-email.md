@@ -12,17 +12,17 @@ The `/api/send-email` route handler provides a native, serverless endpoint for p
 sequenceDiagram
     autonumber
     actor Visitor as Visitor / Contact Form
-    participant Limiter as In-Memory Rate Limiter
+    participant WAF as Vercel Firewall (WAF)
     participant Route as Next.js 16 Route Handler
     participant Zod as Zod 3 Validator
     participant SMTP as Nodemailer (Gmail SMTP)
     actor Inbox as Gourab's Inbox
 
-    Visitor->>Route: POST /api/send-email (JSON body)
-    Route->>Limiter: checkRateLimit(clientIp)
-    alt Rate limit exceeded (>5 req/hr)
-        Limiter-->>Visitor: HTTP 429 Too Many Requests (Retry-After)
+    Visitor->>WAF: POST /api/send-email (JSON body)
+    alt WAF Rate limit exceeded (>5 req/hr)
+        WAF-->>Visitor: HTTP 429 Too Many Requests (Deny at Edge)
     else Under limit
+        WAF->>Route: Pass to Serverless Function
         Route->>Zod: contactSchema.safeParse(body)
         alt Invalid Schema / Malformed Input
             Zod-->>Visitor: HTTP 400 Bad Request (JSON error)
@@ -62,9 +62,15 @@ sequenceDiagram
    - `replyTo: senderEmail` is configured on all outbound messages.
    - When Gourab clicks "Reply" in Gmail, it immediately drafts a response to the sender instead of emailing his own address.
 
-2. **In-Memory Rate Limiting (`lib/rate-limit.ts`)**:
-   - 5 submissions per hour per client IP.
-   - Automatically unreferenced cleanup timer every 10 minutes to prune expired IP timestamps.
+2. **Vercel Firewall Rate Limiting (`lib/rate-limit.ts`)**:
+   - Rate limiting is enforced globally at Vercel's Edge via the live custom WAF rule:
+     - **Rule Name**: `Rate limit email endpoints`
+     - **Rule ID**: `rule_rate_limit_email_endpoints_l0RL18`
+     - **Condition**: `path is any of /api/send-email, /api/newsletter/subscribe` AND `method equals POST`
+     - **Limit**: `5 req / 3600s` by client IP
+     - **Action**: `deny` (HTTP 429 directly at Edge)
+   - Route handler programmatic check (`checkFirewallRateLimit`) uses `@vercel/firewall` to verify the rule as defense-in-depth. In local development, it returns `{ success: true }`.
+   - **Anti-Spoofing IP Resolution (`getClientIp`)**: Prioritizes `x-real-ip` (overwritten and verified by Vercel edge) and `x-vercel-ip`, falling back to the rightmost IP of `x-forwarded-for`. Attackers cannot spoof client IPs by prepending fake IPs to `X-Forwarded-For`.
 
 3. **HTML Sanitization**:
    - Characters (`&`, `<`, `>`, `"`, `'`) are escaped before injecting user text into the HTML email template to prevent HTML and script injection in email clients.

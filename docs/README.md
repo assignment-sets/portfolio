@@ -15,10 +15,12 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 - [**Markdown Content Negotiation (RFC 9110)**](ai-ux/markdown-content-negotiation.md)
   - Details the edge content negotiation architecture powered by Next.js 16 `proxy.ts`, RFC 9110 `Accept` parsing, and on-the-fly SSR DOM-to-Markdown compilation via `node-html-markdown`.
 
-### Fullstack APIs
+### Fullstack APIs & Security
 
+- [**Rate Limiting & Edge Defense Architecture**](security/rate-limiting-and-firewall.md)
+  - Details the 5-layer security topology: Vercel Edge Firewall WAF (`rule_rate_limit_email_endpoints_l0RL18`), `@vercel/firewall` SDK, anti-spoofing IP extraction, DOM honeypot bot trap, anti-enumeration shielding, and Gmail batch dispatch caps.
 - [**Contact Email Route (`/api/send-email`)**](api/contact-email.md)
-  - Details the native Next.js 16 Route Handler, Zod validation, HTML sanitization, Nodemailer SMTP with `replyTo` support, and in-memory IP rate limiting.
+  - Details the native Next.js 16 Route Handler, Zod validation, HTML sanitization, Nodemailer SMTP with `replyTo` support, and Vercel Firewall rate limiting.
 - [**Availability Status Route (`/api/availability`)**](#6-toggle-availability-status)
   - Authenticated route to toggle or set the "Available for work" status badge on the Hero section with instant ISR revalidation.
 - [**Newsletter & MongoDB Persistence**](newsletter/newsletter-architecture.md)

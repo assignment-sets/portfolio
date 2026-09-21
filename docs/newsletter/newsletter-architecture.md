@@ -59,9 +59,11 @@ flowchart TD
 ## 3. Endpoints Specification
 
 ### `POST /api/newsletter/subscribe`
-- Validates payload with Zod (`{ email: string }`).
-- Prevents duplicates (returns `"already_subscribed"`).
-- Automatically re-activates previously unsubscribed readers.
+- **Validation**: Validates payload with Zod (`{ email: string, hp_field?: string }`).
+- **Rate Limiting (Vercel Firewall)**: Protected globally at Vercel's Edge by live custom WAF rule `rule_rate_limit_email_endpoints_l0RL18` (5 req / 3600s per client IP, action: `deny`). Exceeded requests are blocked directly at the edge with `HTTP 429`. Route handler programmatic check (`checkFirewallRateLimit`) provides defense-in-depth.
+- **Honeypot Bot Defense**: Automatically detects automated bots via hidden `hp_field`. Bot submissions receive an immediate `200 OK` response without touching MongoDB.
+- **Anti-Enumeration**: Always returns an identical success message (`"Thank you for subscribing! Please check your inbox."`) whether an email is newly created, re-activated, or already subscribed, preventing user enumeration probes.
+- Automatically re-activates previously unsubscribed readers in the database.
 
 ### `GET /api/newsletter/unsubscribe?token=<UUID>`
 - One-click CAN-SPAM compliant unsubscribe link.
@@ -71,12 +73,12 @@ flowchart TD
 - Protected by `Authorization: Bearer ${CRON_SECRET}` with `maxDuration = 60` for Vercel Hobby serverless timeout safety and `dynamic = "force-dynamic"`.
 - Supports **`GET`** (invoked automatically by Vercel Cron according to `vercel.json`) and **`POST`** (manual/programmatic dispatch with body payload).
 - Automatically queries and dispatches the oldest pending issue with `status: "scheduled"` or `status: "partially_sent"` in FIFO order. Once dispatched, status transitions to `"sent"`.
- - **Atomic State Machine** (cron-safe, resume-safe, once-per-subscriber):
-  1. Queries only active subscribers not yet in `newsletter.deliveredEmails`.
-  2. Sends sequentially one email per subscriber (≤50) via single Gmail SMTP transporter — each with personalized `unsubscribeToken` footer (no CC/BCC exposure).
-  3. Immediately persists each success/failure to MongoDB via `$addToSet: { deliveredEmails: email }` / `$inc: { deliveryStats.success/failed }`.
-  4. **Skips `partially_sent` unless systemic:** At dispatch end, if `successRatio < 0.5` (e.g. 2/50 sent) or `pending>10 && delivered<3`, keep `partially_sent` for retry next Monday; otherwise (e.g. 48/50 sent = isolated hoax/bounce) promote to `sent` so next cron picks the next `scheduled` issue and queue is not blocked. `Vercel Cron` runs strictly once a week (`0 10 * * 1` Mondays 10:00 UTC).
-  5. Total time for 50 subscribers ≈ 3–10s, well within `maxDuration 60s`.
+   1. Queries active subscribers not yet in `newsletter.deliveredEmails` with a safety cap of `MAX_BATCH_PER_DISPATCH = 50` to safeguard Gmail's 500/day quota and guarantee execution completes well within Vercel's 60s timeout.
+   2. Sends sequentially one email per subscriber via single Gmail SMTP transporter — each with personalized `unsubscribeToken` footer (no CC/BCC exposure).
+   3. Immediately persists each success/failure to MongoDB via `$addToSet: { deliveredEmails: email }` / `$inc: { deliveryStats.success/failed }`.
+   4. If more active subscribers remain beyond the batch limit (`hasMoreRemaining`), the issue stays in `partially_sent` for the subsequent cron or dispatch run.
+   5. **Skips `partially_sent` unless systemic:** When all subscribers have been processed, if `successRatio < 0.5` (e.g. 2/50 sent) or `pending>10 && delivered<3`, keep `partially_sent` for retry next Monday; otherwise (e.g. 48/50 sent = isolated hoax/bounce) promote to `sent` so next cron picks the next `scheduled` issue and queue is not blocked. `Vercel Cron` runs strictly once a week (`0 10 * * 1` Mondays 10:00 UTC).
+   6. Total time for 50 subscribers ≈ 3–10s, well within `maxDuration 60s`.
 
 ---
 

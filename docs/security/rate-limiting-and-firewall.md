@@ -43,7 +43,17 @@ Rate limiting is evaluated centrally at Vercel's global edge network rather than
 - **Method**: `POST`
 - **Rate Limit**: `5 requests / 3600s (fixed_window)`
 - **Key**: Client IP (`ip`)
-- **Action**: `deny` (Returns `429 Too Many Requests` directly at edge before function invocation)
+- **Action**: `deny` (Returns `403 Forbidden` directly from Vercel Edge before function invocation)
+
+### Client-Side Rate Limit Interception & Feedback
+When Vercel Edge blocks a client with `403 Deny` (or API responds with `429`), frontend components (`NewsletterSubscribe.tsx` and `ContactForm.tsx`) intercept the HTTP status code before attempting JSON parsing:
+- **Status Interception**: Detects `res.status === 403 || res.status === 429`.
+- **Inline Badge**: Displays a polite inline warning (*"Rate limit reached (5 attempts per hour). Please try again later."*) directly within the component box.
+- **Zero Full-Page Crashes**: Prevents non-JSON edge responses from triggering React uncaught rejections.
+
+### Error Boundary Shield (`app/error.tsx` & `app/global-error.tsx`)
+- **`app/error.tsx`**: Nested segment error boundary preserving the `RootLayout` (Navbar, Header, Footer, and Theme) on client component runtime errors, providing a branded "Try Again" recovery action.
+- **`app/global-error.tsx`**: Root layout fallback replacing Next.js's raw generic crash screen with a styled, dark/light theme error container.
 
 ### Programmatic Route Handler Defense (`lib/rate-limit.ts`)
 Using `@vercel/firewall`, route handlers verify the firewall rule programmatically:

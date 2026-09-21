@@ -58,6 +58,7 @@ vercel.json               # Cron: GET /api/newsletter/dispatch Mondays 10:00 UTC
 
 ## 3. Critical Conventions (Do Not Break)
 
+- **Prioritize ripgrep over grep:** Always try to work with rg first before using grep for code search
 - **Next.js 16 Proxy:** File is `proxy.ts` (not `middleware.ts`) exporting `proxy()` + `config.matcher`. See `proxy.ts:1-60`. Matcher skips `api`, `_next/*`, `llms.txt`, `markdown`, static assets. Always check `x-internal-render: true` bypass before rewriting.
 - **Content Negotiation:** `lib/accept.ts` parses RFC 9110 `Accept` with `q` + specificity. `proxy.ts` rewrites to `/markdown/*` when `text/markdown` wins or path ends `.md`; returns `406` if neither `text/html` nor `text/markdown` is acceptable and `*/*` absent. Must `appendVaryAccept` / set `Vary: Accept`.
 - **Markdown Compilation:** `app/markdown/[[...slug]]/route.ts` does an internal `fetch` with `x-internal-render`, extracts `<main>`, strips `script/style/svg/button/form`, reformats via `node-html-markdown`. `Vary` + `Cache-Control public max-age 3600 s-maxage 86400` required.
@@ -73,6 +74,7 @@ vercel.json               # Cron: GET /api/newsletter/dispatch Mondays 10:00 UTC
 ## 4. Environment
 
 Required vars (see `.env.example:1-22`):
+
 ```
 MONGODB_URI / MONGODB_DB=portfoliodb
 CRON_SECRET / STUDIO_SECRET
@@ -80,6 +82,7 @@ EMAIL_USER / EMAIL_PASS  # Gmail app password for /api/send-email + newsletter d
 NEXT_PUBLIC_SITE_URL=https://gourabmondal.vercel.app
 NEXT_PUBLIC_GA_ID=G-8LVL1N08S6
 ```
+
 Vercel needs `NEXT_PUBLIC_GA_ID`, `CRON_SECRET`, `STUDIO_SECRET`, `MONGODB_URI`, `EMAIL_USER`, `EMAIL_PASS` set in dashboard; redeploy after changing `NEXT_PUBLIC_*`.
 
 ## 5. Docs Before Code

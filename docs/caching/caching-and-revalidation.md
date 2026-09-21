@@ -82,20 +82,32 @@ flowchart LR
 - **Fallback TTL**: `86400` seconds (24 hours).
 - **Database Footprint**: Extremely lightweight query projecting only `slug` (`{ status: "published" }, { projection: { slug: 1 } }`).
 
-#### B. Individual Blog Post Cache
+#### B. Individual Blog Post Cache (`/blog/[slug]`)
 - **Function**: `getCachedBlogPostBySlug(slug)` in [`lib/blog.ts`](../../lib/blog.ts)
 - **Cache Tags**: `["blogs", "blog-posts"]`
 - **Fallback TTL**: `86400` seconds (24 hours).
 - **Route Segment**: `export const revalidate = 86400` in [`app/blog/[slug]/page.tsx`](../../app/blog/[slug]/page.tsx).
+- **Static SSG Prerendering**: Uses `generateStaticParams()` to pre-render published articles into static HTML + RSC.
+- **Edge Cache Preservation**: Author session checks ("Edit Post" button) are decoupled into a client component ([`components/BlogEditButton.tsx`](../../components/BlogEditButton.tsx)) querying [`/api/newsletter/studio/session`](../../app/api/newsletter/studio/session/route.ts). Eliminating `cookies()` from the server component prevents dynamic route de-optimization, allowing Vercel Edge CDN to serve `Cache-Control: s-maxage=3600, stale-while-revalidate=...` with `x-vercel-cache: HIT`.
 
-#### C. Paginated Blog Feed Cache
+#### C. Paginated Blog Feed Cache (`/blog`)
 - **Function**: `getCachedPublishedBlogPosts({ page, limit, tag, query })` in [`lib/blog.ts`](../../lib/blog.ts)
 - **Cache Tags**: `["blogs", "blog-feed"]`
 - **Fallback TTL**: `3600` seconds (1 hour).
 - **Route Segment**: `export const revalidate = 3600` in [`app/blog/page.tsx`](../../app/blog/page.tsx).
+- **Static ISR Architecture**: Decouples `searchParams` from the server page component. The server statically prerenders page 1 (`○ /blog`) at build time with 1-hour ISR. The client component ([`components/BlogFeedClient.tsx`](../../components/BlogFeedClient.tsx)) receives initial pre-rendered articles without layout shift and handles dynamic searches, tag filtering, and pagination by querying [`/api/blog`](../../app/api/blog/route.ts).
 - **Live Search Bypass**: When `query` (`q`) is present, the function **completely bypasses `unstable_cache`** to execute real-time MongoDB Atlas Lucene fuzzy compound search (`$search`) against the collection.
 
-#### D. On-Demand Blog Invalidation Hook
+#### D. Edge-Cached Blog API (`/api/blog`)
+- **Route**: [`app/api/blog/route.ts`](../../app/api/blog/route.ts)
+- **Edge Caching Headers**:
+  - Non-search requests (pagination, tag filtering):
+    `Cache-Control: public, s-maxage=3600, stale-while-revalidate=86400`
+    `Vercel-CDN-Cache-Control: public, s-maxage=3600, stale-while-revalidate=86400`
+  - Search queries (`q` present): `private, no-cache, no-store, max-age=0, must-revalidate` to ensure real-time Lucene results.
+- **Client-Safe Utilities**: Pure string and date helpers (`formatBlogDate`, `toIsoDateString`) are isolated in [`lib/blog-utils.ts`](../../lib/blog-utils.ts) to prevent dragging server-only database drivers (`mongodb`) into client component bundles.
+
+#### E. On-Demand Blog Invalidation Hook
 - **Path**: [`app/api/blog/studio/route.ts`](../../app/api/blog/studio/route.ts)
 - **Trigger**: Any mutation in Studio (create, edit, delete, draft/publish status switch).
 - **Invalidation Calls**:

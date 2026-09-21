@@ -1,17 +1,11 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import BlogCardLink from "@/components/BlogCardLink";
+import BlogFeedClient from "@/components/BlogFeedClient";
 import BlogSearchBar from "@/components/BlogSearchBar";
-import {
-  getCachedPublishedBlogPosts,
-  formatBlogDate,
-  toIsoDateString,
-} from "@/lib/blog";
+import { getCachedPublishedBlogPosts } from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
-import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Blogs | Gourab Mondal",
@@ -31,10 +25,6 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600; // 1-hour ISR edge cache fallback
 
-interface BlogIndexPageProps {
-  searchParams?: Promise<{ page?: string; q?: string; tag?: string }>;
-}
-
 function BlogFeedFallback() {
   return (
     <>
@@ -46,194 +36,14 @@ function BlogFeedFallback() {
   );
 }
 
-async function BlogFeedContent({
-  searchParams,
-}: {
-  searchParams?: Promise<{ page?: string; q?: string; tag?: string }>;
-}) {
-  const resolvedSearchParams = await searchParams;
-  const currentPage = Math.max(
-    1,
-    parseInt(resolvedSearchParams?.page || "1", 10) || 1
-  );
-  const searchQuery = (resolvedSearchParams?.q || "").trim();
-  const tagFilter = (resolvedSearchParams?.tag || "").trim();
-  const pageSize = 10;
-
-  const data = await getCachedPublishedBlogPosts({
-    page: currentPage,
-    limit: pageSize,
-    query: searchQuery || undefined,
-    tag: tagFilter || undefined,
-  });
-
-  const { posts, total, totalPages, hasNextPage, hasPrevPage } = data;
-
-  const buildPaginationUrl = (pageNumber: number) => {
-    const params = new URLSearchParams();
-    if (searchQuery) params.set("q", searchQuery);
-    if (tagFilter) params.set("tag", tagFilter);
-    if (pageNumber > 1) params.set("page", pageNumber.toString());
-    const queryStr = params.toString();
-    return queryStr ? `/blog?${queryStr}` : "/blog";
-  };
-
-  return (
-    <>
-      <div className="blog-search-container">
-        <BlogSearchBar initialQuery={searchQuery} />
-      </div>
-
-      {searchQuery && (
-        <div className="blog-search-status">
-          <span>
-            Showing {total} {total === 1 ? "result" : "results"} for{" "}
-            <strong>&ldquo;{searchQuery}&rdquo;</strong>
-          </span>
-        </div>
-      )}
-
-      <section className="blog-list-section">
-        {posts.length === 0 ? (
-          <div className="blog-empty-card">
-            <div className="blog-empty-icon-wrap">
-              <Search size={24} className="blog-empty-icon" />
-            </div>
-            <p className="blog-empty-title">
-              {searchQuery
-                ? `No articles matching "${searchQuery}"`
-                : currentPage > 1
-                ? "No more articles on this page."
-                : "No articles published yet."}
-            </p>
-            <p className="blog-empty-desc">
-              {searchQuery ? (
-                <>
-                  Try searching with different keywords, check for spelling, or{" "}
-                  <Link href="/blog" className="blog-empty-back-link">
-                    browse all articles
-                  </Link>
-                  .
-                </>
-              ) : currentPage > 1 ? (
-                <Link href="/blog" className="blog-empty-back-link">
-                  &larr; Return to page 1
-                </Link>
-              ) : (
-                "Articles are currently in draft or being written. Check back soon or subscribe to the newsletter below."
-              )}
-            </p>
-          </div>
-        ) : (
-          <div className="blog-cards-grid">
-            {posts.map((post) => {
-              const formattedDate = formatBlogDate(
-                post.publishedAt || post.createdAt,
-                "short"
-              );
-              const isoDate = toIsoDateString(
-                post.publishedAt || post.createdAt
-              );
-
-              return (
-                <article key={post.slug} className="blog-card">
-                  <div className="blog-card-meta">
-                    <time dateTime={isoDate}>{formattedDate}</time>
-                    <span className="blog-card-dot">&middot;</span>
-                    <span>{post.readingTimeMinutes || 1} min read</span>
-                  </div>
-
-                  <h2 className="blog-card-title">
-                    <BlogCardLink
-                      href={`/blog/${post.slug}`}
-                      title={post.title}
-                      slug={post.slug}
-                      location="card_title"
-                      className="blog-card-link"
-                    >
-                      {post.title}
-                    </BlogCardLink>
-                  </h2>
-
-                  {post.description && (
-                    <p className="blog-card-excerpt">{post.description}</p>
-                  )}
-
-                  {post.tags && post.tags.length > 0 && (
-                    <div className="blog-card-tags">
-                      {post.tags.map((tag) => (
-                        <span key={tag} className="blog-tag">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="blog-card-footer">
-                    <BlogCardLink
-                      href={`/blog/${post.slug}`}
-                      title={post.title}
-                      slug={post.slug}
-                      location="read_more"
-                      className="blog-read-more"
-                    >
-                      <span>Read article</span>
-                      <ArrowRight size={13} />
-                    </BlogCardLink>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="blog-pagination">
-            {hasPrevPage ? (
-              <Link
-                href={buildPaginationUrl(currentPage - 1)}
-                className="blog-pagination-btn"
-              >
-                <ArrowLeft size={13} />
-                <span>Previous</span>
-              </Link>
-            ) : (
-              <span className="blog-pagination-btn disabled">
-                <ArrowLeft size={13} />
-                <span>Previous</span>
-              </span>
-            )}
-
-            <span className="blog-pagination-info">
-              Page {currentPage} of {totalPages}
-            </span>
-
-            {hasNextPage ? (
-              <Link
-                href={buildPaginationUrl(currentPage + 1)}
-                className="blog-pagination-btn"
-              >
-                <span>Next</span>
-                <ArrowRight size={13} />
-              </Link>
-            ) : (
-              <span className="blog-pagination-btn disabled">
-                <span>Next</span>
-                <ArrowRight size={13} />
-              </span>
-            )}
-          </div>
-        )}
-      </section>
-    </>
-  );
-}
-
-export default async function BlogIndexPage({
-  searchParams,
-}: BlogIndexPageProps) {
-  const projects = await getFeaturedProjects();
+export default async function BlogIndexPage() {
+  const [data, projects] = await Promise.all([
+    getCachedPublishedBlogPosts({
+      page: 1,
+      limit: 10,
+    }),
+    getFeaturedProjects(),
+  ]);
 
   return (
     <>
@@ -244,7 +54,7 @@ export default async function BlogIndexPage({
         </header>
 
         <Suspense fallback={<BlogFeedFallback />}>
-          <BlogFeedContent searchParams={searchParams} />
+          <BlogFeedClient initialData={data} />
         </Suspense>
       </main>
       <Footer projects={projects} />

@@ -149,11 +149,15 @@ Authenticated endpoint for blog post creation, updates, previews, and deletion.
 ## 5. Public Reader & SEO Architecture
 
 ### Blog Feed (`/blog`)
-- Server-rendered page with dynamic pagination (`/blog?page=2`).
+- Pure static ISR page (`export const revalidate = 3600`) pre-rendering the initial feed at build time with 1-hour background revalidation.
+- Decoupled from server-side `searchParams` to ensure Vercel Edge CDN caches the response (`x-vercel-cache: HIT`).
+- Interactive client component (`BlogFeedClient.tsx`) manages dynamic search, tag filtering, and pagination by querying `/api/blog` without layout shift or full-page refreshes.
 - Reverse chronological order by `publishedAt`.
 - Responsive pagination controls (`← Previous`, `Page X of Y`, `Next →`).
 
 ### Individual Post Reader (`/blog/[slug]`)
+- Static SSG pre-rendering (`export const revalidate = 86400`) via `generateStaticParams()` cached at Vercel's global edge.
+- Author "Edit Post" shortcut is decoupled into client component `BlogEditButton.tsx`, avoiding dynamic `cookies()` calls in the server component.
 - Dynamic OpenGraph and Twitter card metadata generation via `generateMetadata()`:
   - `og:type = "article"`
   - `article:published_time`

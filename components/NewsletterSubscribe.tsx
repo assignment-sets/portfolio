@@ -42,6 +42,21 @@ export default function NewsletterSubscribe() {
         }),
       });
 
+      // Intercept rate limiting responses from Vercel WAF (403 Deny) or API (429 Throttle)
+      if (res.status === 403 || res.status === 429) {
+        const rateLimitMsg =
+          "Rate limit reached (5 attempts per hour). Please try again later.";
+        trackEvent("newsletter_subscribe", {
+          status: "rate_limited",
+          error: rateLimitMsg,
+        });
+        setStatus({
+          type: "error",
+          message: rateLimitMsg,
+        });
+        return;
+      }
+
       const data = await res.json().catch(() => ({}));
 
       if (res.ok) {
@@ -52,13 +67,14 @@ export default function NewsletterSubscribe() {
         });
         setEmail("");
       } else {
+        const errorMsg = data.error || "Failed to subscribe. Please try again.";
         trackEvent("newsletter_subscribe", {
           status: "error",
-          error: data.error,
+          error: errorMsg,
         });
         setStatus({
           type: "error",
-          message: data.error || "Failed to subscribe. Please try again.",
+          message: errorMsg,
         });
       }
     } catch {

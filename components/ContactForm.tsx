@@ -43,6 +43,18 @@ export default function ContactForm() {
         body: JSON.stringify({ name, email, subject, message }),
       });
 
+      // Intercept rate limiting responses from Vercel WAF (403 Deny) or API (429 Throttle)
+      if (res.status === 403 || res.status === 429) {
+        const rateLimitMsg =
+          "Submission limit reached (5 per hour). Please email me directly at gourab.m099@gmail.com or try again later.";
+        trackEvent("contact_form_submit", { status: "rate_limited" });
+        setStatus({
+          message: rateLimitMsg,
+          type: "err",
+        });
+        return;
+      }
+
       if (res.ok) {
         trackEvent("contact_form_submit", { status: "success" });
         setStatus({
@@ -51,11 +63,15 @@ export default function ContactForm() {
         });
         form.reset();
       } else {
-        trackEvent("contact_form_submit", { status: "error" });
         const data = await res.json().catch(() => ({}));
+        const errorMsg =
+          data.error || "Something went wrong. Email me directly.";
+        trackEvent("contact_form_submit", {
+          status: "error",
+          error: errorMsg,
+        });
         setStatus({
-          message:
-            data.error || "Something went wrong. Email me directly.",
+          message: errorMsg,
           type: "err",
         });
       }

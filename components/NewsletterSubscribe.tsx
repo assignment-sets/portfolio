@@ -6,6 +6,7 @@ import { Send, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function NewsletterSubscribe() {
   const [email, setEmail] = useState("");
+  const [hpField, setHpField] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<{
     type: "success" | "error" | "";
@@ -35,7 +36,10 @@ export default function NewsletterSubscribe() {
       const res = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({
+          email: email.trim(),
+          hp_field: hpField,
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -79,6 +83,18 @@ export default function NewsletterSubscribe() {
       </div>
 
       <form onSubmit={handleSubscribe} className="newsletter-form">
+        {/* Honeypot field hidden from legitimate users to trap automated bots */}
+        <div style={{ display: "none" }} aria-hidden="true">
+          <input
+            type="text"
+            name="hp_field"
+            value={hpField}
+            onChange={(e) => setHpField(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </div>
+
         <div className="newsletter-input-wrap">
           <input
             type="email"

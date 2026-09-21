@@ -171,7 +171,9 @@ export async function dispatchNewsletter({
     throw new Error("Failed to resolve campaign document from database.");
   }
 
-  // 2. Fetch all active subscribers who have NOT yet received this newsletter
+  // 2. Fetch active subscribers who have NOT yet received this newsletter
+  // Safety cap: Max 50 emails per run to respect Gmail 500/day quota & Vercel 60s timeout
+  const MAX_BATCH_PER_DISPATCH = 50;
   const alreadyDelivered = new Set(campaign.deliveredEmails || []);
 
   const pendingSubscribers = await subscribersCollection
@@ -179,6 +181,7 @@ export async function dispatchNewsletter({
       status: "active",
       email: { $nin: Array.from(alreadyDelivered) },
     })
+    .limit(MAX_BATCH_PER_DISPATCH)
     .toArray();
 
   const totalActiveSubscribers = await subscribersCollection.countDocuments({
@@ -308,13 +311,17 @@ export async function dispatchNewsletter({
   // Heuristic: vast minority sent (e.g. 2/50) => systemic (SMTP/down) => keep retryable.
   //           vast majority sent (e.g. 48/50) => per-address hoax/bounce => treat as done.
   const totalDeliveredNow = alreadyDelivered.size + newlyDeliveredCount;
-  const isComplete =
-    totalDeliveredNow >= totalActiveSubscribers && batchFailCount === 0;
+  const totalAttemptedNow = totalDeliveredNow + batchFailCount;
+  const hasMoreRemaining = totalAttemptedNow < totalActiveSubscribers;
 
   let finalStatus: Newsletter["status"];
   let finalSentAt: Date | undefined;
 
-  if (isComplete) {
+  if (hasMoreRemaining) {
+    // More active subscribers remain to be sent in future batches
+    finalStatus = "partially_sent";
+    finalSentAt = undefined;
+  } else if (totalDeliveredNow >= totalActiveSubscribers && batchFailCount === 0) {
     finalStatus = "sent";
     finalSentAt = new Date();
   } else {

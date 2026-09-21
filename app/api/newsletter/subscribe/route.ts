@@ -1,12 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { subscribeUser } from "@/lib/newsletter";
+import { checkFirewallRateLimit } from "@/lib/rate-limit";
 
 const SubscribeSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address"),
+  hp_field: z.string().optional(), // Honeypot field to trap automated bots
 });
 
 export async function POST(req: NextRequest) {
+  // 1. Rate Limiting via Vercel Firewall (5 req / 3600s per IP)
+  const rateLimit = await checkFirewallRateLimit(req);
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      {
+        error:
+          rateLimit.error ||
+          "Too many subscription attempts from this IP. Please try again later.",
+      },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const parsed = SubscribeSchema.safeParse(body);
@@ -18,12 +33,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await subscribeUser(parsed.data.email);
+    // 2. Honeypot check: If the hidden honeypot field is filled, silently discard without DB insertion
+    if (parsed.data.hp_field && parsed.data.hp_field.trim() !== "") {
+      return NextResponse.json({
+        success: true,
+        message: "Thank you for subscribing! Please check your inbox.",
+      });
+    }
 
+    await subscribeUser(parsed.data.email);
+
+    // 3. Anti-Enumeration: Always return identical success response regardless of existing status
     return NextResponse.json({
       success: true,
-      message: result.message,
-      status: result.status,
+      message: "Thank you for subscribing! Please check your inbox.",
     });
   } catch (error: unknown) {
     const message =

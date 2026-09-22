@@ -77,14 +77,13 @@ collection.createIndex({ status: 1, publishedAt: -1 });
 
 ---
 
-## 3. Authoring Studio & 404 Cloaking Pattern
+## 3. Authoring Studio & Authentication
 
 ### Route: `/studio/blog`
 
-To prevent administrative interface discovery by web crawlers or unauthorized visitors:
-1. **Zero-Knowledge 404 Cloaking**: Visiting `/studio/blog` without authorization calls Next.js's native `notFound()` function, producing an authentic HTTP 404 status and rendering `app/not-found.tsx`.
-2. **Shared Session Model**: Authenticates against `STUDIO_SECRET` via `?key=<SECRET>` URL parameter or the 30-day `httpOnly`, `secure`, `SameSite=Lax` `studio_session` cookie created during studio login.
-3. **Robots Protection**: Disallowed globally in `app/robots.ts` under `/studio/`.
+- **Authentication Model**: Single-admin access via `/studio/login` using password authentication or WebAuthn Passkeys (Touch ID, Face ID, YubiKey, Bitwarden).
+- **Session Management**: Successful authentication sets an 8-hour secure, `httpOnly`, `SameSite=Lax` HMAC-SHA256 signed session cookie (`studio_session`).
+- **Access Protection**: Unauthenticated requests to `/studio/blog` automatically redirect to `/studio/login`. Studio routes are disallowed from indexing in `app/robots.ts` (`disallow: ["/api/", "/studio/"]`).
 
 ### Studio Capabilities
 - **Split Live Editor**: Side-by-side authoring pane with Markdown input, real-time word count, reading time calculator, and live rendered preview.
@@ -137,7 +136,7 @@ Public endpoint for retrieving paginated published articles.
 ### `POST /api/blog/studio`
 Authenticated endpoint for blog post creation, updates, previews, and deletion.
 
-- **Authentication**: `Authorization: Bearer ${STUDIO_SECRET}`, `studio_session` cookie, or `{ secret: STUDIO_SECRET }` in body.
+- **Authentication**: Verified via `checkStudioAuth()` accepting `Authorization: Bearer ${STUDIO_SECRET}` or valid `studio_session` cookie.
 - **Validation**: Enforced via typed Zod schemas with 150KB markdown bounds, regex-validated slugs, 200 char title limits, and valid `ObjectId` checks.
 - **Actions**:
   1. `save_draft`: Validates and saves/updates a post with `status: "draft"`.
@@ -213,10 +212,10 @@ curl -i "http://localhost:3000/api/blog?q=ipsec"
 curl -i -H "Accept: text/markdown" http://localhost:3000/blog/designing-resilient-distributed-workflows
 ```
 
-### 4. Verify 404 Cloaking on Unauthorized Studio Access
+### 4. Verify Redirect on Unauthorized Studio Access
 ```bash
 curl -i http://localhost:3000/studio/blog
-# Expected output: HTTP/1.1 404 Not Found
+# Expected output: HTTP/1.1 307 Temporary Redirect (Location: /studio/login)
 ```
 
 ### 5. Authenticated Studio Search Query

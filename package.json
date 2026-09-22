@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",
+    "@simplewebauthn/browser": "^14.0.0",
+    "@simplewebauthn/server": "^14.0.2",
     "@vercel/firewall": "^1.2.5",
     "lucide-react": "^1.40.0",
     "marked": "^18.0.11",

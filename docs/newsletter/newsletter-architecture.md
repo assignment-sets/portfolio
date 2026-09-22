@@ -59,10 +59,10 @@ flowchart TD
 ## 3. Endpoints Specification
 
 ### `POST /api/newsletter/subscribe`
-- **Validation**: Validates payload with Zod (`{ email: string, hp_field?: string }`).
-- **Rate Limiting (Vercel Firewall)**: Protected globally at Vercel's Edge by live custom WAF rule `rule_rate_limit_email_endpoints_l0RL18` (5 req / 3600s per client IP, action: `deny`). Exceeded requests are blocked directly at the edge with `HTTP 429`. Route handler programmatic check (`checkFirewallRateLimit`) provides defense-in-depth.
-- **Honeypot Bot Defense**: Automatically detects automated bots via hidden `hp_field`. Bot submissions receive an immediate `200 OK` response without touching MongoDB.
-- **Anti-Enumeration**: Always returns an identical success message (`"Thank you for subscribing! Please check your inbox."`) whether an email is newly created, re-activated, or already subscribed, preventing user enumeration probes.
+- **Validation**: Validates email format and length bounds with Zod.
+- **Rate Limiting**: Protected at the edge via Vercel Firewall and route handler verification to prevent abuse.
+- **Bot Defense**: Silent filtering for automated scrapers and bots without unnecessary database writes.
+- **Anti-Enumeration**: Returns a uniform success message to protect subscriber privacy.
 - Automatically re-activates previously unsubscribed readers in the database.
 
 ### `GET /api/newsletter/unsubscribe?token=<UUID>`

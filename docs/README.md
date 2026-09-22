@@ -15,18 +15,16 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 - [**Markdown Content Negotiation (RFC 9110)**](ai-ux/markdown-content-negotiation.md)
   - Details the edge content negotiation architecture powered by Next.js 16 `proxy.ts`, RFC 9110 `Accept` parsing, and on-the-fly SSR DOM-to-Markdown compilation via `node-html-markdown`.
 
-- [**Input Validation & Sandboxed HTML Sanitization**](security/input-validation-and-sanitization.md)
-  - Details the zero-trust defense-in-depth architecture: server-side HTML sanitization via `sanitize-html` (`lib/sanitize.ts`), compiler integrations (`lib/blog.ts` and `lib/email-template.ts`), strict Zod validation schemas across studio/public APIs, and NoSQL/ReDoS query protection (`escapeRegex`).
-- [**Rate Limiting & Edge Defense Architecture**](security/rate-limiting-and-firewall.md)
-  - Details the 5-layer security topology: Vercel Edge Firewall WAF (`rule_rate_limit_email_endpoints_l0RL18`), `@vercel/firewall` SDK, anti-spoofing IP extraction, DOM honeypot bot trap, anti-enumeration shielding, and Gmail batch dispatch caps.
+### Core Platform & APIs
+
 - [**Contact Email Route (`/api/send-email`)**](api/contact-email.md)
-  - Details the native Next.js 16 Route Handler, Zod validation, HTML sanitization, Nodemailer SMTP with `replyTo` support, and Vercel Firewall rate limiting.
-- [**Availability Status Route (`/api/availability`)**](#6-toggle-availability-status)
+  - Details the native Next.js 16 Route Handler, Zod validation, Nodemailer SMTP with `replyTo` support, and edge rate limiting.
+- [**Availability Status Route (`/api/availability`)**](#availability-status)
   - Authenticated route to toggle or set the "Available for work" status badge on the Hero section with instant ISR revalidation.
 - [**Newsletter & MongoDB Persistence**](newsletter/newsletter-architecture.md)
-  - Details the self-hosted newsletter platform, MongoDB Atlas connection pooling (`lib/mongodb.ts`), Gmail SMTP sequential delivery (no domain needed), one-click unsubscribe handling, and secure Vercel Cron dispatch.
-- [**Personal Blog Platform & Cloaked Studio**](blog/blog-architecture.md)
-  - Details the native blogging system, MongoDB Atlas Lucene fuzzy search (`$search`), 404-cloaked authoring studio (`/studio/blog`), paginated public API (`/api/blog`), dynamic OpenGraph SEO, and RFC 9110 Markdown negotiation integration.
+  - Details the self-hosted newsletter platform, MongoDB Atlas connection pooling (`lib/mongodb.ts`), Gmail SMTP sequential delivery, one-click unsubscribe handling, and Vercel Cron dispatch.
+- [**Personal Blog Platform & Authoring Studio**](blog/blog-architecture.md)
+  - Details the native blogging system, MongoDB Atlas Lucene fuzzy search (`$search`), authenticated authoring studio (`/studio/blog`), paginated public API (`/api/blog`), dynamic OpenGraph SEO, and RFC 9110 Markdown negotiation integration.
 
 ### Analytics & Observability
 

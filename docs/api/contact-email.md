@@ -62,18 +62,12 @@ sequenceDiagram
    - `replyTo: senderEmail` is configured on all outbound messages.
    - When Gourab clicks "Reply" in Gmail, it immediately drafts a response to the sender instead of emailing his own address.
 
-2. **Vercel Firewall Rate Limiting (`lib/rate-limit.ts`)**:
-   - Rate limiting is enforced globally at Vercel's Edge via the live custom WAF rule:
-     - **Rule Name**: `Rate limit email endpoints`
-     - **Rule ID**: `rule_rate_limit_email_endpoints_l0RL18`
-     - **Condition**: `path is any of /api/send-email, /api/newsletter/subscribe` AND `method equals POST`
-     - **Limit**: `5 req / 3600s` by client IP
-     - **Action**: `deny` (HTTP 429 directly at Edge)
-   - Route handler programmatic check (`checkFirewallRateLimit`) uses `@vercel/firewall` to verify the rule as defense-in-depth. In local development, it returns `{ success: true }`.
-   - **Anti-Spoofing IP Resolution (`getClientIp`)**: Prioritizes `x-real-ip` (overwritten and verified by Vercel edge) and `x-vercel-ip`, falling back to the rightmost IP of `x-forwarded-for`. Attackers cannot spoof client IPs by prepending fake IPs to `X-Forwarded-For`.
+2. **Edge Rate Limiting (`lib/rate-limit.ts`)**:
+   - Rate limiting is evaluated at the network edge via Vercel Firewall to protect serverless functions and Gmail sending quotas.
+   - Programmatic verification (`checkFirewallRateLimit`) using `@vercel/firewall` provides serverless-level protection.
 
 3. **HTML Sanitization**:
-   - Characters (`&`, `<`, `>`, `"`, `'`) are escaped before injecting user text into the HTML email template to prevent HTML and script injection in email clients.
+   - Characters (`&`, `<`, `>`, `"`, `'`) are escaped before injecting user text into the HTML email template.
 
 ---
 

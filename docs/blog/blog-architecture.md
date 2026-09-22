@@ -10,11 +10,12 @@ The portfolio integrates a native, single-creator personal blogging platform dir
 
 ```mermaid
 flowchart TD
-    subgraph Authoring ["Authoring & Administration (Cloaked)"]
-        Author["Author"] -->|"Direct Key / Cookie Auth"| StudioPage["GET /studio/blog?key=STUDIO_SECRET"]
-        StudioPage -->|"404 Cloak Check"| AuthGuard{"checkStudioAuth()"}
-        AuthGuard -->|Invalid / Missing| NotFound["404 Not Found (notFound())"]
-        AuthGuard -->|Valid Session / Key| StudioUI["BlogStudioClient (Split Editor)"]
+    subgraph Authoring ["Authoring & Administration"]
+        Author["Author"] -->|"Password / Passkey Login"| LoginPage["GET /studio/login"]
+        LoginPage -->|"Issues 8h HMAC Session Cookie"| StudioPage["GET /studio/blog"]
+        StudioPage -->|"Session Guard"| AuthGuard{"verifySessionToken()"}
+        AuthGuard -->|Invalid / Expired| RedirectLogin["Redirect to /studio/login"]
+        AuthGuard -->|Valid Session| StudioUI["BlogStudioClient (Split Editor)"]
         StudioUI -->|"save_draft / publish / delete"| StudioAPI["POST /api/blog/studio"]
     end
 

@@ -34,25 +34,28 @@ app/                      # App Router
   sitemap.ts / robots.ts / manifest.ts / opengraph-image.tsx
   llms.txt/route.ts       # text/plain, cache 3600/86400, from data/portfolio.ts + github.ts
   markdown/[[...slug]]/route.ts  # text/markdown, internal fetch + node-html-markdown
-  studio/page.tsx + StudioHubClient.tsx        # force-dynamic, 404-cloaked central studio control hub
-  studio/newsletter/page.tsx + NewsletterStudioClient.tsx  # force-dynamic, 404-cloaked newsletter UI
-  studio/blog/page.tsx + BlogStudioClient.tsx  # force-dynamic, 404-cloaked blog authoring UI
+  studio/page.tsx + StudioHubClient.tsx        # force-dynamic, central studio control hub & passkey manager
+  studio/login/page.tsx + StudioLoginClient.tsx # password + WebAuthn passkey sign-in
+  studio/register/page.tsx + StudioRegisterClient.tsx # single-admin bootstrap registration
+  studio/newsletter/page.tsx + NewsletterStudioClient.tsx  # force-dynamic newsletter UI
+  studio/blog/page.tsx + BlogStudioClient.tsx  # force-dynamic blog authoring UI
   blog/page.tsx + blog/[slug]/page.tsx         # Public blog feed (paginated) & article reader
   api/
     availability/route.ts            # Authenticated work availability toggle & status API
     send-email/route.ts              # Zod + rate-limit + nodemailer (Gmail)
+    auth/studio/                     # Dedicated auth API: register, login, logout, status, passkey
     newsletter/{subscribe,unsubscribe,dispatch}/route.ts
-    newsletter/studio{,/session}/route.ts
+    newsletter/studio/route.ts
     blog/route.ts                    # Public paginated blog query API
     blog/studio/route.ts             # Authenticated blog CRUD & search API
     [...catchAll]/route.ts           # JSON 404 for unknown API routes
 components/               # 15 client/server comps — Navbar, Hero, Projects, ThemeToggle, etc.
-lib/                      # accept.ts, github.ts, mongodb.ts, newsletter.ts, blog.ts, email-template.ts, sanitize.ts, analytics.ts, rate-limit.ts
+lib/                      # auth-studio.ts, accept.ts, github.ts, mongodb.ts, newsletter.ts, blog.ts, email-template.ts, sanitize.ts, analytics.ts, rate-limit.ts
 data/portfolio.ts         # Single source of truth — pinnedRepoNames, skills, projects, education
 public/sw.js              # Vanilla SW — Network-First HTML, Stale-While-Revalidate assets
 proxy.ts                  # Next.js 16 Proxy (replaces middleware.ts) — content negotiation
 scripts/newsletter-sync.ts
-docs/                     # Engineering docs — ai-ux, newsletter, blog, security, offline, analytics, data, seo, api
+docs/                     # Engineering docs — ai-ux, newsletter, blog, offline, analytics, data, seo, api
 vercel.json               # Cron: GET /api/newsletter/dispatch Mondays 10:00 UTC
 ```
 
@@ -65,8 +68,8 @@ vercel.json               # Cron: GET /api/newsletter/dispatch Mondays 10:00 UTC
 - **Theme:** FOUC-free via `components/ThemeInitScript.tsx` using `useServerInsertedHTML` inline IIFE (`localStorage` + `prefers-color-scheme`). `globals.css` uses `data-theme` + CSS vars + `@media prefers-color-scheme` fallback. `ThemeToggle.tsx` tracks `theme_toggle` and listens to `matchMedia`.
 - **Analytics:** `@next/third-parties/google` `<GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!}>` in `app/layout.tsx:166`. Custom events via `lib/analytics.ts:10` `trackEvent()` wrapping `sendGAEvent` with try/catch (ad-blocker resilience). Never hardcode GA ID — use `NEXT_PUBLIC_GA_ID` (`G-8LVL1N08S6`).
 - **MongoDB:** `lib/mongodb.ts` globals-caches client for HMR; `getDb()` defaults to `MONGODB_DB || "portfolio"`. Newsletters use atomic `deliveredEmails` `$addToSet` + sequential Gmail SMTP send (≤50, 500/day free, resume-safe via `$nin deliveredEmails`).
-- **Studio Security:** Route is 404-cloaked (`notFound()`) unless `?key=STUDIO_SECRET` or `studio_session` httpOnly cookie (30d, `secure`, `lax`). `proxy.ts` / `robots.ts` disallow `/studio/` + `/api/`. Two secrets: `CRON_SECRET` (Vercel Cron Bearer) vs `STUDIO_SECRET` (human).
-- **Rate Limiting:** `lib/rate-limit.ts` in-memory `Map` (5/hr default, 10m cleanup `unref`), keyed by `x-forwarded-for` / `x-real-ip`. Contact form checks `navigator.onLine` client-side before POST.
+- **Studio Security:** Single-admin model authenticated via `/studio/login` with WebAuthn Passkeys or password. Session token is stored in an 8-hour `studio_session` httpOnly cookie (`secure`, `lax`). Guarded by `lib/auth-studio.ts` `checkStudioAuth()`. CLI scripts use `Authorization: Bearer <STUDIO_SECRET>`. Two secrets: `CRON_SECRET` (Vercel Cron Bearer) vs `STUDIO_SECRET` (admin session signing & CLI header).
+- **Rate Limiting:** Network-edge rate limiting with `@vercel/firewall` SDK verification and in-memory rate limiting fallbacks. Contact form checks `navigator.onLine` client-side before POST.
 - **Offline/PWA:** `public/sw.js` `portfolio-cache-v1` precaches `/`, favicons, `/llms.txt`; `ServiceWorkerRegister.tsx` registers only in `production`; `OfflineNotice.tsx` uses `useSyncExternalStore` (hydration-safe) with 3s reconnect toast.
 - **Styling:** `@tailwindcss/postcss` imported in `globals.css` but components use hand-rolled class names (`.skill-row`, `.project-card`, etc.). Do not add Tailwind utility classes without checking existing pattern.
 - **SEO:** `metadataBase https://gourabmondal.vercel.app`, `alternates.canonical`, `openGraph`, `twitter`, JSON-LD `Person` + `ProfilePage` graph in `app/layout.tsx:84`. `app/sitemap.ts` + `robots.ts` + `<link rel=alternate>` for `llms.txt` and `text/markdown`.
@@ -88,7 +91,6 @@ Vercel needs `NEXT_PUBLIC_GA_ID`, `CRON_SECRET`, `STUDIO_SECRET`, `MONGODB_URI`,
 ## 5. Docs Before Code
 
 - AI UX: `docs/ai-ux/llms-txt.md`, `docs/ai-ux/markdown-content-negotiation.md`
-- Security: `docs/security/input-validation-and-sanitization.md`, `docs/security/rate-limiting-and-firewall.md`
 - Newsletter: `docs/newsletter/newsletter-architecture.md`
 - Blog: `docs/blog/blog-architecture.md`
 - Offline: `docs/offline/pwa-and-offline-caching.md`

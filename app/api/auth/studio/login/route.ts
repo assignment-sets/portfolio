@@ -1,0 +1,68 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import {
+  getStudioUsersCollection,
+  verifyPassword,
+  createSessionToken,
+  STUDIO_COOKIE_NAME,
+  STUDIO_COOKIE_OPTIONS,
+} from "@/lib/auth-studio";
+
+export const dynamic = "force-dynamic";
+
+const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const parseResult = loginSchema.safeParse(body);
+
+    if (!parseResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: parseResult.error.issues[0]?.message || "Invalid credentials",
+        },
+        { status: 400 }
+      );
+    }
+
+    const { username, password } = parseResult.data;
+    const normalizedUsername = username.trim().toLowerCase();
+
+    const usersCol = await getStudioUsersCollection();
+    const user = await usersCol.findOne({ username: normalizedUsername });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Invalid username or password." },
+        { status: 401 }
+      );
+    }
+
+    const isValid = verifyPassword(password, user.passwordHash, user.salt);
+    if (!isValid) {
+      return NextResponse.json(
+        { success: false, error: "Invalid username or password." },
+        { status: 401 }
+      );
+    }
+
+    const token = createSessionToken(normalizedUsername);
+    const response = NextResponse.json({
+      success: true,
+      username: normalizedUsername,
+    });
+
+    response.cookies.set(STUDIO_COOKIE_NAME, token, STUDIO_COOKIE_OPTIONS);
+    return response;
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "Internal server error during login." },
+      { status: 500 }
+    );
+  }
+}

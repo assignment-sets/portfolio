@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
@@ -12,36 +11,13 @@ export const dynamic = "force-dynamic";
 
 const availabilityPostSchema = z.object({
   available: z.boolean().optional(),
-  secret: z.string().optional(),
 });
 
-async function checkAuth(req: NextRequest, bodySecret?: string): Promise<boolean> {
-  const studioSecret = process.env.STUDIO_SECRET;
-  if (!studioSecret) return false;
-
-  // 1. Check URL query parameter (?key=...)
-  const { searchParams } = new URL(req.url);
-  const queryKey = searchParams.get("key");
-  if (queryKey && queryKey === studioSecret) return true;
-
-  // 2. Check Bearer authorization header
-  const authHeader = req.headers.get("authorization");
-  if (authHeader === `Bearer ${studioSecret}`) return true;
-
-  // 3. Check studio_session cookie
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("studio_session")?.value;
-  if (sessionToken === studioSecret) return true;
-
-  // 4. Check body secret
-  if (bodySecret && bodySecret === studioSecret) return true;
-
-  return false;
-}
+import { checkStudioAuth } from "@/lib/auth-studio";
 
 export async function GET(req: NextRequest) {
   try {
-    const isAuthorized = await checkAuth(req);
+    const isAuthorized = await checkStudioAuth(req);
     if (!isAuthorized) {
       return NextResponse.json(
         { error: "Unauthorized. Valid studio secret or session required." },
@@ -72,7 +48,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isAuthorized = await checkAuth(req, parsed.data.secret);
+    const isAuthorized = await checkStudioAuth(req);
     if (!isAuthorized) {
       return NextResponse.json(
         { error: "Unauthorized. Valid studio secret or session required." },

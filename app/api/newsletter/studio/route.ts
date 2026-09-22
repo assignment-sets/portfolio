@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { ObjectId } from "mongodb";
 import nodemailer from "nodemailer";
 import { z } from "zod";
@@ -54,29 +53,12 @@ const dispatchNowSchema = z.object({
   markdown: z.string().min(1, "Markdown is required for dispatch").max(150000, "Markdown content exceeds 150KB limit"),
 });
 
-async function checkAuth(req: NextRequest, bodySecret?: string): Promise<boolean> {
-  const studioSecret = process.env.STUDIO_SECRET;
-  if (!studioSecret) return false;
-
-  // 1. Check Bearer authorization header
-  const authHeader = req.headers.get("authorization");
-  if (authHeader === `Bearer ${studioSecret}`) return true;
-
-  // 2. Check studio_session cookie
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("studio_session")?.value;
-  if (sessionToken === studioSecret) return true;
-
-  // 3. Check body secret
-  if (bodySecret && bodySecret === studioSecret) return true;
-
-  return false;
-}
+import { checkStudioAuth } from "@/lib/auth-studio";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const isAuthorized = await checkAuth(req, body.secret);
+    const isAuthorized = await checkStudioAuth(req);
 
     if (!isAuthorized) {
       return NextResponse.json(

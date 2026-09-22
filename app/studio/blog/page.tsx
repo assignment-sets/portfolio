@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import { ObjectId } from "mongodb";
 import BlogStudioClient from "./BlogStudioClient";
@@ -16,23 +16,19 @@ export const metadata: Metadata = {
 };
 
 interface BlogStudioPageProps {
-  searchParams: Promise<{ key?: string; edit?: string }>;
+  searchParams: Promise<{ edit?: string }>;
 }
 
+import { verifySessionToken, STUDIO_COOKIE_NAME } from "@/lib/auth-studio";
+
 export default async function BlogStudioPage({ searchParams }: BlogStudioPageProps) {
-  const { key, edit } = await searchParams;
+  const { edit } = await searchParams;
   const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get("studio_session")?.value;
-  const studioSecret = process.env.STUDIO_SECRET;
+  const sessionCookie = cookieStore.get(STUDIO_COOKIE_NAME)?.value;
+  const isAuthorized = verifySessionToken(sessionCookie).valid;
 
-  const isAuthorized =
-    Boolean(studioSecret) &&
-    ((Boolean(key) && key === studioSecret) ||
-      (Boolean(sessionCookie) && sessionCookie === studioSecret));
-
-  // 404 Cloaking: Return native Not Found page to scanners, bots, and unauthorized visitors
-  if (!isAuthorized || !studioSecret) {
-    notFound();
+  if (!isAuthorized) {
+    redirect("/studio/login");
   }
 
   let initialBlogs: Array<{
@@ -120,7 +116,6 @@ export default async function BlogStudioPage({ searchParams }: BlogStudioPagePro
     <BlogStudioClient
       initialBlogs={initialBlogs}
       initialSelectedBlog={initialSelectedBlog}
-      initialKey={key}
     />
   );
 }

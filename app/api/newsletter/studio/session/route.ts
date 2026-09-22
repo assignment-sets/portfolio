@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 export async function GET() {
@@ -9,30 +9,7 @@ export async function GET() {
   return NextResponse.json({ authenticated });
 }
 
-export async function POST(req: NextRequest) {
-  const studioSecret = process.env.STUDIO_SECRET;
-  if (!studioSecret) {
-    return NextResponse.json({ error: "STUDIO_SECRET not configured" }, { status: 500 });
-  }
-
-  const body = await req.json().catch(() => ({}));
-  const key = body.key;
-
-  if (key !== studioSecret) {
-    return NextResponse.json({ error: "Invalid secret key" }, { status: 401 });
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.set("studio_session", studioSecret, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-  });
-
-  return NextResponse.json({ success: true, message: "Session established" });
-}
+// POST /api/newsletter/studio/session with key is removed in favor of /api/auth/studio/*
 
 export async function DELETE() {
   const cookieStore = await cookies();

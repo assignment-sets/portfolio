@@ -42,7 +42,6 @@ interface BlogItem {
 interface BlogStudioClientProps {
   initialBlogs: BlogItem[];
   initialSelectedBlog?: BlogItem | null;
-  initialKey?: string;
 }
 
 const STARTER_BLOG = `# Designing Resilient Distributed Workflows
@@ -72,7 +71,6 @@ async function processEvent(event: WebhookEvent) {
 export default function BlogStudioClient({
   initialBlogs,
   initialSelectedBlog,
-  initialKey,
 }: BlogStudioClientProps) {
   const router = useRouter();
 
@@ -149,19 +147,9 @@ export default function BlogStudioClient({
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isTogglingAvail, setIsTogglingAvail] = useState(false);
 
-  // On mount with initialKey, establish persistent session cookie & fetch availability
+  // On mount, fetch availability status
   useEffect(() => {
-    if (initialKey) {
-      fetch("/api/newsletter/studio/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: initialKey }),
-      }).catch(() => {});
-    }
-
-    fetch("/api/availability", {
-      headers: initialKey ? { Authorization: `Bearer ${initialKey}` } : {},
-    })
+    fetch("/api/availability")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && typeof data.available === "boolean") {
@@ -169,7 +157,7 @@ export default function BlogStudioClient({
         }
       })
       .catch(() => {});
-  }, [initialKey]);
+  }, []);
 
   const handleToggleAvailability = async () => {
     setIsTogglingAvail(true);
@@ -178,9 +166,8 @@ export default function BlogStudioClient({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(initialKey ? { Authorization: `Bearer ${initialKey}` } : {}),
         },
-        body: JSON.stringify({ secret: initialKey }),
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (data.success && typeof data.available === "boolean") {
@@ -210,7 +197,6 @@ export default function BlogStudioClient({
         body: JSON.stringify({
           action: "render_preview",
           markdown,
-          secret: initialKey,
         }),
       });
       const data = await res.json();
@@ -254,7 +240,6 @@ export default function BlogStudioClient({
             markdown,
             tags: tagsArray,
             status: publish ? "published" : "draft",
-            secret: initialKey,
           }),
         });
 
@@ -325,7 +310,6 @@ export default function BlogStudioClient({
           body: JSON.stringify({
             action: "delete",
             blogId: targetId,
-            secret: initialKey,
           }),
         });
         const data = await res.json();
@@ -383,7 +367,6 @@ export default function BlogStudioClient({
         body: JSON.stringify({
           action: "search",
           query: q,
-          secret: initialKey,
         }),
       });
       const data = await res.json();
@@ -410,7 +393,6 @@ export default function BlogStudioClient({
         body: JSON.stringify({
           action: "search",
           query: "",
-          secret: initialKey,
         }),
       });
       const data = await res.json();

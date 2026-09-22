@@ -40,7 +40,6 @@ interface IssueItem {
 interface NewsletterStudioClientProps {
   activeSubscribers: number;
   initialIssues: IssueItem[];
-  initialKey?: string;
   authorEmail: string;
 }
 
@@ -69,51 +68,46 @@ What have you been building this week? Hit reply and let me know—I read every 
 export default function NewsletterStudioClient({
   activeSubscribers,
   initialIssues,
-  initialKey,
   authorEmail,
 }: NewsletterStudioClientProps) {
   const router = useRouter();
-  const [title, setTitle] = useState("Issue #1: Building Reliable Distributed Workflows");
-  const [subject, setSubject] = useState("Issue #1: Building Reliable Distributed Workflows");
-  const [markdown, setMarkdown] = useState(STARTER_TEMPLATE);
-  const [currentIssueId, setCurrentIssueId] = useState<string | null>(null);
-  const [issues, setIssues] = useState<IssueItem[]>(initialIssues);
 
-  const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
+  const [issues, setIssues] = useState<IssueItem[]>(initialIssues);
+  const [currentIssueId, setCurrentIssueId] = useState<string | null>(
+    initialIssues.length > 0 ? initialIssues[0].id : null
+  );
+  const [title, setTitle] = useState(
+    initialIssues.length > 0 ? initialIssues[0].title : ""
+  );
+  const [subject, setSubject] = useState(
+    initialIssues.length > 0 ? initialIssues[0].subject : ""
+  );
+  const [markdown, setMarkdown] = useState(
+    initialIssues.length > 0 && initialIssues[0].markdownText
+      ? initialIssues[0].markdownText
+      : STARTER_TEMPLATE
+  );
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-
+  const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
+  const [isPending, startTransition] = useTransition();
+  const currentIssue = issues.find((i) => i.id === currentIssueId);
+  const isScheduled = currentIssue?.status === "scheduled";
+  const isSent = currentIssue?.status === "sent";
   const [feedback, setFeedback] = useState<{
     type: "success" | "error" | "info" | "";
     message: string;
   }>({ type: "", message: "" });
-
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
 
-  const [isPending, startTransition] = useTransition();
-
-  const currentIssue = issues.find((i) => i.id === currentIssueId);
-  const isScheduled = currentIssue?.status === "scheduled";
-  const isSent = currentIssue?.status === "sent";
-
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isTogglingAvail, setIsTogglingAvail] = useState(false);
 
-  // On mount with initialKey, establish persistent session cookie & fetch availability
+  // On mount, fetch availability
   useEffect(() => {
-    if (initialKey) {
-      fetch("/api/newsletter/studio/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: initialKey }),
-      }).catch(() => {});
-    }
-
-    fetch("/api/availability", {
-      headers: initialKey ? { Authorization: `Bearer ${initialKey}` } : {},
-    })
+    fetch("/api/availability")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && typeof data.available === "boolean") {
@@ -121,7 +115,7 @@ export default function NewsletterStudioClient({
         }
       })
       .catch(() => {});
-  }, [initialKey]);
+  }, []);
 
   const handleToggleAvailability = async () => {
     setIsTogglingAvail(true);
@@ -130,9 +124,8 @@ export default function NewsletterStudioClient({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(initialKey ? { Authorization: `Bearer ${initialKey}` } : {}),
         },
-        body: JSON.stringify({ secret: initialKey }),
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (data.success && typeof data.available === "boolean") {
@@ -163,7 +156,6 @@ export default function NewsletterStudioClient({
           action: "render_preview",
           title,
           markdown,
-          secret: initialKey,
         }),
       });
       const data = await res.json();
@@ -190,7 +182,6 @@ export default function NewsletterStudioClient({
             subject,
             markdown,
             authorEmail,
-            secret: initialKey,
           }),
         });
         const data = await res.json();
@@ -230,7 +221,6 @@ export default function NewsletterStudioClient({
             title,
             subject,
             markdown,
-            secret: initialKey,
           }),
         });
         const data = await res.json();
@@ -292,7 +282,6 @@ export default function NewsletterStudioClient({
             title,
             subject,
             markdown,
-            secret: initialKey,
           }),
         });
         const data = await res.json();
@@ -343,7 +332,6 @@ export default function NewsletterStudioClient({
           body: JSON.stringify({
             action: "delete",
             newsletterId: targetId,
-            secret: initialKey,
           }),
         });
         const data = await res.json();
@@ -403,7 +391,6 @@ export default function NewsletterStudioClient({
         body: JSON.stringify({
           action: "search",
           query,
-          secret: initialKey,
         }),
       });
       const data = await res.json();
@@ -430,7 +417,6 @@ export default function NewsletterStudioClient({
         body: JSON.stringify({
           action: "search",
           query: "",
-          secret: initialKey,
         }),
       });
       const data = await res.json();

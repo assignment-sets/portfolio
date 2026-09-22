@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import NewsletterStudioClient from "./NewsletterStudioClient";
 import {
@@ -17,26 +17,15 @@ export const metadata: Metadata = {
   },
 };
 
-interface NewsletterStudioPageProps {
-  searchParams: Promise<{ key?: string }>;
-}
+import { verifySessionToken, STUDIO_COOKIE_NAME } from "@/lib/auth-studio";
 
-export default async function NewsletterStudioPage({
-  searchParams,
-}: NewsletterStudioPageProps) {
-  const { key } = await searchParams;
+export default async function NewsletterStudioPage() {
   const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get("studio_session")?.value;
-  const studioSecret = process.env.STUDIO_SECRET;
+  const sessionCookie = cookieStore.get(STUDIO_COOKIE_NAME)?.value;
+  const isAuthorized = verifySessionToken(sessionCookie).valid;
 
-  const isAuthorized =
-    Boolean(studioSecret) &&
-    ((Boolean(key) && key === studioSecret) ||
-      (Boolean(sessionCookie) && sessionCookie === studioSecret));
-
-  // 404 Cloaking: Return native Not Found page to scanners, bots, and public
-  if (!isAuthorized || !studioSecret) {
-    notFound();
+  if (!isAuthorized) {
+    redirect("/studio/login");
   }
 
   // Fetch metrics and recent issues for author overview
@@ -85,7 +74,6 @@ export default async function NewsletterStudioPage({
     <NewsletterStudioClient
       activeSubscribers={activeSubscribers}
       initialIssues={recentIssues}
-      initialKey={key}
       authorEmail="mondalgourab140@gmail.com"
     />
   );

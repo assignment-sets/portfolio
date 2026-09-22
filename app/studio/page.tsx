@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import StudioHubClient from "./StudioHubClient";
 import {
@@ -19,24 +19,19 @@ export const metadata: Metadata = {
   },
 };
 
-interface StudioPageProps {
-  searchParams: Promise<{ key?: string }>;
-}
+import {
+  verifySessionToken,
+  STUDIO_COOKIE_NAME,
+  getStudioPasskeysCollection,
+} from "@/lib/auth-studio";
 
-export default async function StudioPage({ searchParams }: StudioPageProps) {
-  const { key } = await searchParams;
+export default async function StudioPage() {
   const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get("studio_session")?.value;
-  const studioSecret = process.env.STUDIO_SECRET;
+  const sessionCookie = cookieStore.get(STUDIO_COOKIE_NAME)?.value;
+  const session = verifySessionToken(sessionCookie);
 
-  const isAuthorized =
-    Boolean(studioSecret) &&
-    ((Boolean(key) && key === studioSecret) ||
-      (Boolean(sessionCookie) && sessionCookie === studioSecret));
-
-  // 404 Cloaking: Return native Not Found page to scanners, bots, and public
-  if (!isAuthorized || !studioSecret) {
-    notFound();
+  if (!session.valid || !session.username) {
+    redirect("/studio/login");
   }
 
   // Fetch summary stats concurrently for the dashboard hub
@@ -46,13 +41,15 @@ export default async function StudioPage({ searchParams }: StudioPageProps) {
   let totalBlogs = 0;
   let publishedBlogs = 0;
   let draftBlogs = 0;
+  let initialPasskeys: Array<{ id: string; deviceName: string; createdAt: string }> = [];
 
   try {
-    const [availStatus, subCol, newsCol, blogsCol] = await Promise.all([
+    const [availStatus, subCol, newsCol, blogsCol, passkeysCol] = await Promise.all([
       getAvailabilityStatus(),
       getSubscribersCollection().catch(() => null),
       getNewslettersCollection().catch(() => null),
       getBlogsCollection().catch(() => null),
+      getStudioPasskeysCollection().catch(() => null),
     ]);
 
     available = availStatus;
@@ -70,6 +67,20 @@ export default async function StudioPage({ searchParams }: StudioPageProps) {
       publishedBlogs = await blogsCol.countDocuments({ status: "published" });
       draftBlogs = await blogsCol.countDocuments({ status: "draft" });
     }
+
+    if (passkeysCol) {
+      const docs = await passkeysCol
+        .find({ username: session.username })
+        .project({ credentialID: 1, deviceName: 1, createdAt: 1 })
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      initialPasskeys = docs.map((d) => ({
+        id: d.credentialID,
+        deviceName: d.deviceName || "Security Key",
+        createdAt: d.createdAt.toISOString(),
+      }));
+    }
   } catch (err) {
     console.error("Failed to fetch studio hub stats:", err);
   }
@@ -84,7 +95,7 @@ export default async function StudioPage({ searchParams }: StudioPageProps) {
         publishedBlogs,
         draftBlogs,
       }}
-      initialKey={key}
+      initialPasskeys={initialPasskeys}
     />
   );
 }

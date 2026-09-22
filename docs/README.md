@@ -15,8 +15,8 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 - [**Markdown Content Negotiation (RFC 9110)**](ai-ux/markdown-content-negotiation.md)
   - Details the edge content negotiation architecture powered by Next.js 16 `proxy.ts`, RFC 9110 `Accept` parsing, and on-the-fly SSR DOM-to-Markdown compilation via `node-html-markdown`.
 
-### Fullstack APIs & Security
-
+- [**Input Validation & Sandboxed HTML Sanitization**](security/input-validation-and-sanitization.md)
+  - Details the zero-trust defense-in-depth architecture: server-side HTML sanitization via `sanitize-html` (`lib/sanitize.ts`), compiler integrations (`lib/blog.ts` and `lib/email-template.ts`), strict Zod validation schemas across studio/public APIs, and NoSQL/ReDoS query protection (`escapeRegex`).
 - [**Rate Limiting & Edge Defense Architecture**](security/rate-limiting-and-firewall.md)
   - Details the 5-layer security topology: Vercel Edge Firewall WAF (`rule_rate_limit_email_endpoints_l0RL18`), `@vercel/firewall` SDK, anti-spoofing IP extraction, DOM honeypot bot trap, anti-enumeration shielding, and Gmail batch dispatch caps.
 - [**Contact Email Route (`/api/send-email`)**](api/contact-email.md)

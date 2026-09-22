@@ -70,7 +70,7 @@ collection.createIndex({ status: 1, publishedAt: -1 });
 
 - `slugify(text: string): string`: Normalizes raw titles into URL-safe kebab-case strings (`[a-z0-9-]+`), stripping punctuation and consecutive hyphens.
 - `calculateReadingTime(markdownText: string): number`: Computes reading duration based on word count with a minimum of 1 minute.
-- `renderBlogMarkdown(content: string): Promise<string>`: Converts GitHub Flavored Markdown into semantic HTML.
+- `renderBlogMarkdown(content: string): Promise<string>`: Converts GitHub Flavored Markdown into safe, semantic HTML passing through `sanitizeBlogHtml()` (`lib/sanitize.ts`) to eliminate script injection and enforce link safety.
 - `getBlogPostBySlug(slug: string, includeDraft = false): Promise<BlogPost | null>`: Retrieves a single post. Enforces `status: "published"` unless explicitly bypassed for internal previewing.
 - `getPublishedBlogPosts(options?: { page?: number; limit?: number; tag?: string }): Promise<PaginatedBlogPosts>`: Executes paginated queries using MongoDB `.skip()` and `.limit()` with parallel count resolution.
 
@@ -137,12 +137,13 @@ Public endpoint for retrieving paginated published articles.
 Authenticated endpoint for blog post creation, updates, previews, and deletion.
 
 - **Authentication**: `Authorization: Bearer ${STUDIO_SECRET}`, `studio_session` cookie, or `{ secret: STUDIO_SECRET }` in body.
+- **Validation**: Enforced via typed Zod schemas with 150KB markdown bounds, regex-validated slugs, 200 char title limits, and valid `ObjectId` checks.
 - **Actions**:
-  1. `save_draft`: Saves or updates a post with `status: "draft"`.
-  2. `publish`: Sets `status: "published"`, timestamps `publishedAt`, and compiles Markdown to HTML.
-  3. `render_preview`: Compiles raw Markdown text and returns `{ html: string, readingTimeMinutes: number }`.
-  4. `delete`: Removes post document by `slug` or `id`.
-  5. `search`: Returns matching posts (both drafts and published) for studio management.
+  1. `save_draft`: Validates and saves/updates a post with `status: "draft"`.
+  2. `publish`: Validates, sets `status: "published"`, timestamps `publishedAt`, and compiles Markdown to sanitized HTML.
+  3. `render_preview`: Compiles raw Markdown text through `sanitizeBlogHtml()` and returns `{ success: true, html: string }`.
+  4. `delete`: Removes post document by validated `blogId`.
+  5. `search`: Returns matching posts (both drafts and published) using regex-escaped queries via `escapeRegex()`.
 
 ---
 

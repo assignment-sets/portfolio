@@ -66,6 +66,7 @@ flowchart TD
 - Automatically re-activates previously unsubscribed readers in the database.
 
 ### `GET /api/newsletter/unsubscribe?token=<UUID>`
+- **Validation**: Token parameter is strictly validated via Zod (`/^[a-zA-Z0-9_-]+$/`, max 100 chars) before querying MongoDB to prevent injection or malformed lookups.
 - One-click CAN-SPAM compliant unsubscribe link.
 - Returns a clean, Georgia-serif styled confirmation page.
 

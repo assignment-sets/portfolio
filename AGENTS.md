@@ -47,12 +47,12 @@ app/                      # App Router
     blog/studio/route.ts             # Authenticated blog CRUD & search API
     [...catchAll]/route.ts           # JSON 404 for unknown API routes
 components/               # 15 client/server comps — Navbar, Hero, Projects, ThemeToggle, etc.
-lib/                      # accept.ts, github.ts, mongodb.ts, newsletter.ts, blog.ts, email-template.ts, analytics.ts, rate-limit.ts
+lib/                      # accept.ts, github.ts, mongodb.ts, newsletter.ts, blog.ts, email-template.ts, sanitize.ts, analytics.ts, rate-limit.ts
 data/portfolio.ts         # Single source of truth — pinnedRepoNames, skills, projects, education
 public/sw.js              # Vanilla SW — Network-First HTML, Stale-While-Revalidate assets
 proxy.ts                  # Next.js 16 Proxy (replaces middleware.ts) — content negotiation
 scripts/newsletter-sync.ts
-docs/                     # Engineering docs — ai-ux, newsletter, blog, offline, analytics, data, seo, api
+docs/                     # Engineering docs — ai-ux, newsletter, blog, security, offline, analytics, data, seo, api
 vercel.json               # Cron: GET /api/newsletter/dispatch Mondays 10:00 UTC
 ```
 
@@ -88,6 +88,7 @@ Vercel needs `NEXT_PUBLIC_GA_ID`, `CRON_SECRET`, `STUDIO_SECRET`, `MONGODB_URI`,
 ## 5. Docs Before Code
 
 - AI UX: `docs/ai-ux/llms-txt.md`, `docs/ai-ux/markdown-content-negotiation.md`
+- Security: `docs/security/input-validation-and-sanitization.md`, `docs/security/rate-limiting-and-firewall.md`
 - Newsletter: `docs/newsletter/newsletter-architecture.md`
 - Blog: `docs/blog/blog-architecture.md`
 - Offline: `docs/offline/pwa-and-offline-caching.md`

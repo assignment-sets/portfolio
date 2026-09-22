@@ -1,25 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getCachedPublishedBlogPosts } from "@/lib/blog";
+
+const blogQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(1000).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+  tag: z.string().trim().max(50).optional(),
+  q: z.string().trim().max(100).optional(),
+});
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(searchParams.get("limit") || "10", 10) || 10)
-    );
-    const tag = searchParams.get("tag") || undefined;
-    const query = searchParams.get("q") || undefined;
+    const parsed = blogQuerySchema.safeParse({
+      page: searchParams.get("page") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
+      tag: searchParams.get("tag") ?? undefined,
+      q: searchParams.get("q") ?? undefined,
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    const { page, limit, tag, q } = parsed.data;
 
     const data = await getCachedPublishedBlogPosts({
       page,
       limit,
-      tag,
-      query,
+      tag: tag || undefined,
+      query: q || undefined,
     });
 
-    const isSearch = Boolean(query?.trim());
+    const isSearch = Boolean(q?.trim());
     const cacheControl = isSearch
       ? "private, no-cache, no-store, max-age=0, must-revalidate"
       : "public, s-maxage=3600, stale-while-revalidate=86400";

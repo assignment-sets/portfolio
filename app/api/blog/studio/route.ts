@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { ObjectId } from "mongodb";
+import { z } from "zod";
 import {
   getBlogsCollection,
   renderBlogMarkdown,
@@ -10,11 +11,53 @@ import {
   toIsoDateString,
   BlogPost,
 } from "@/lib/blog";
+import { escapeRegex } from "@/lib/sanitize";
 
 export const maxDuration = 60;
 
+const searchSchema = z.object({
+  query: z.string().max(100, "Search query cannot exceed 100 characters").optional(),
+});
+
+const renderPreviewSchema = z.object({
+  markdown: z.string().min(1, "Markdown is required").max(150000, "Markdown content exceeds 150KB limit"),
+});
+
+const deleteSchema = z.object({
+  blogId: z.string().refine((val) => ObjectId.isValid(val), "Valid blogId is required"),
+});
+
+const saveBlogSchema = z.object({
+  blogId: z.string().refine((val) => ObjectId.isValid(val), "Invalid blogId").optional(),
+  title: z.string().trim().min(1, "Title is required").max(200, "Title cannot exceed 200 characters"),
+  slug: z
+    .string()
+    .trim()
+    .max(100, "Slug cannot exceed 100 characters")
+    .regex(/^[a-z0-9-_]*$/i, "Slug can only contain letters, numbers, hyphens, and underscores")
+    .optional(),
+  description: z.string().trim().max(500, "Description cannot exceed 500 characters").optional(),
+  markdown: z.string().min(1, "Markdown is required").max(150000, "Markdown content exceeds 150KB limit"),
+  tags: z
+    .union([
+      z.array(z.string().trim().max(50, "Tag cannot exceed 50 characters")),
+      z.string().max(500, "Tags string cannot exceed 500 characters"),
+    ])
+    .optional(),
+  coverImage: z
+    .string()
+    .trim()
+    .max(1000, "Cover image URL cannot exceed 1000 characters")
+    .refine(
+      (val) => !val || val.startsWith("http://") || val.startsWith("https://") || val.startsWith("/"),
+      "Cover image must be a valid HTTP(S) URL or absolute path"
+    )
+    .optional(),
+  status: z.enum(["draft", "published"]).optional(),
+});
+
 async function checkAuth(req: NextRequest, bodySecret?: string): Promise<boolean> {
-  const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
+  const studioSecret = process.env.STUDIO_SECRET;
   if (!studioSecret) return false;
 
   // 1. Check Bearer authorization header
@@ -44,32 +87,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const {
-      action,
-      blogId,
-      title,
-      slug: customSlug,
-      description,
-      markdown,
-      tags,
-      coverImage,
-      status: requestedStatus,
-      query,
-    } = body;
+    const { action } = body;
 
-    if (!action) {
-      return NextResponse.json({ error: "Action is required." }, { status: 400 });
+    if (!action || typeof action !== "string") {
+      return NextResponse.json({ error: "Valid action is required." }, { status: 400 });
     }
 
     const blogsCol = await getBlogsCollection();
 
     // ACTION: Search or list recent blog posts
     if (action === "search" || action === "list") {
-      const q = typeof query === "string" ? query.trim() : "";
+      const parsed = searchSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+      }
+
+      const q = parsed.data.query?.trim() || "";
       let filter: Record<string, unknown> = {};
 
       if (q) {
-        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const escaped = escapeRegex(q);
         filter = {
           $or: [
             { title: { $regex: escaped, $options: "i" } },
@@ -107,19 +144,23 @@ export async function POST(req: NextRequest) {
 
     // ACTION: Compile Markdown to HTML preview
     if (action === "render_preview") {
-      if (!markdown) {
-        return NextResponse.json({ error: "Markdown content is required." }, { status: 400 });
+      const parsed = renderPreviewSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
       }
-      const html = await renderBlogMarkdown(markdown);
+
+      const html = await renderBlogMarkdown(parsed.data.markdown);
       return NextResponse.json({ success: true, html });
     }
 
     // ACTION: Delete Blog Post permanently
     if (action === "delete") {
-      if (!blogId || !ObjectId.isValid(blogId)) {
-        return NextResponse.json({ error: "Valid blogId is required." }, { status: 400 });
+      const parsed = deleteSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
       }
 
+      const { blogId } = parsed.data;
       const existing = await blogsCol.findOne({ _id: new ObjectId(blogId) });
       if (!existing) {
         return NextResponse.json({ error: "Blog post not found." }, { status: 404 });
@@ -149,12 +190,21 @@ export async function POST(req: NextRequest) {
 
     // ACTION: Save Draft or Publish
     if (action === "save_draft" || action === "publish") {
-      if (!title || !markdown) {
-        return NextResponse.json(
-          { error: "Title and markdown content are required." },
-          { status: 400 }
-        );
+      const parsed = saveBlogSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
       }
+
+      const {
+        blogId,
+        title,
+        slug: customSlug,
+        description,
+        markdown,
+        tags,
+        coverImage,
+        status: requestedStatus,
+      } = parsed.data;
 
       const isPublish = action === "publish" || requestedStatus === "published";
       const status: "draft" | "published" = isPublish ? "published" : "draft";
@@ -168,7 +218,7 @@ export async function POST(req: NextRequest) {
       // Ensure slug uniqueness across other documents
       const existingSlug = await blogsCol.findOne({
         slug: finalSlug,
-        ...(blogId && ObjectId.isValid(blogId) ? { _id: { $ne: new ObjectId(blogId) } } : {}),
+        ...(blogId ? { _id: { $ne: new ObjectId(blogId) } } : {}),
       });
 
       if (existingSlug) {
@@ -186,7 +236,7 @@ export async function POST(req: NextRequest) {
             .filter(Boolean)
         : [];
 
-      if (blogId && ObjectId.isValid(blogId)) {
+      if (blogId) {
         const existing = await blogsCol.findOne({ _id: new ObjectId(blogId) });
         const publishedAt = isPublish
           ? existing?.publishedAt || new Date()

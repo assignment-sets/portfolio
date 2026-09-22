@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { unsubscribeUser } from "@/lib/newsletter";
 
-export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get("token");
+const tokenSchema = z
+  .string()
+  .trim()
+  .min(1, "Token is required")
+  .max(100, "Invalid token format")
+  .regex(/^[a-zA-Z0-9_-]+$/, "Invalid token format");
 
-  if (!token) {
+export async function GET(req: NextRequest) {
+  const rawToken = req.nextUrl.searchParams.get("token") || "";
+  const parsed = tokenSchema.safeParse(rawToken);
+
+  if (!parsed.success) {
     return new NextResponse(
       `<!DOCTYPE html>
       <html lang="en">
@@ -20,7 +29,7 @@ export async function GET(req: NextRequest) {
         <body>
           <div class="card">
             <h2>Invalid Request</h2>
-            <p style="color: #999;">No unsubscribe token was provided.</p>
+            <p style="color: #999;">A valid unsubscribe token was not provided.</p>
             <p><a href="/">Return to Home</a></p>
           </div>
         </body>
@@ -31,6 +40,8 @@ export async function GET(req: NextRequest) {
       }
     );
   }
+
+  const token = parsed.data;
 
   try {
     const success = await unsubscribeUser(token);

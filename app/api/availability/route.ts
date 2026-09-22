@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { z } from "zod";
 import {
   getAvailabilityStatus,
   setAvailabilityStatus,
@@ -9,8 +10,13 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const availabilityPostSchema = z.object({
+  available: z.boolean().optional(),
+  secret: z.string().optional(),
+});
+
 async function checkAuth(req: NextRequest, bodySecret?: string): Promise<boolean> {
-  const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
+  const studioSecret = process.env.STUDIO_SECRET;
   if (!studioSecret) return false;
 
   // 1. Check URL query parameter (?key=...)
@@ -58,8 +64,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const isAuthorized = await checkAuth(req, body.secret);
+    const parsed = availabilityPostSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0].message },
+        { status: 400 }
+      );
+    }
 
+    const isAuthorized = await checkAuth(req, parsed.data.secret);
     if (!isAuthorized) {
       return NextResponse.json(
         { error: "Unauthorized. Valid studio secret or session required." },
@@ -69,8 +82,8 @@ export async function POST(req: NextRequest) {
 
     let newStatus: boolean;
 
-    if (typeof body.available === "boolean") {
-      newStatus = await setAvailabilityStatus(body.available);
+    if (typeof parsed.data.available === "boolean") {
+      newStatus = await setAvailabilityStatus(parsed.data.available);
     } else {
       newStatus = await toggleAvailabilityStatus();
     }

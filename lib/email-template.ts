@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import { sanitizeBlogHtml } from "./sanitize";
 
 export interface RenderEmailOptions {
   title: string;
@@ -22,7 +23,8 @@ export async function renderNewsletterEmail(
     breaks: true,
   });
 
-  const parsedBody = await marked.parse(markdownContent);
+  const rawBody = await marked.parse(markdownContent);
+  const parsedBody = sanitizeBlogHtml(rawBody);
 
   const fallbackUnsubscribe =
     unsubscribeUrl || "https://gourabmondal.vercel.app";

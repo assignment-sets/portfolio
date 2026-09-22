@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { marked } from "marked";
 import { unstable_cache } from "next/cache";
 import { getDb } from "./mongodb";
+import { sanitizeBlogHtml } from "./sanitize";
 
 export interface BlogPost {
   _id?: ObjectId | string;
@@ -62,7 +63,8 @@ export async function renderBlogMarkdown(content: string): Promise<string> {
     gfm: true,
     breaks: true,
   });
-  return marked.parse(content);
+  const rawHtml = await marked.parse(content);
+  return sanitizeBlogHtml(rawHtml);
 }
 
 /**

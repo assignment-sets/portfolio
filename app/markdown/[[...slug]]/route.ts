@@ -109,9 +109,25 @@ export async function GET(
   const { slug = [] } = await params;
   const targetPath = slug.length === 0 ? "/" : `/${slug.join("/")}`;
 
-  // Build target URL for internal SSR fetch
-  const reqUrl = new URL(req.url);
-  const targetUrl = new URL(targetPath, reqUrl.origin);
+  // Build target URL for internal SSR fetch (locked to safe origins to prevent SSRF)
+  const defaultOrigin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+  let safeOrigin = defaultOrigin;
+  try {
+    const reqUrl = new URL(req.url);
+    if (
+      process.env.NODE_ENV === "development" &&
+      (reqUrl.hostname === "localhost" || reqUrl.hostname === "127.0.0.1")
+    ) {
+      safeOrigin = reqUrl.origin;
+    }
+  } catch {
+    // Fall back to defaultOrigin
+  }
+
+  const targetUrl = new URL(targetPath, safeOrigin);
 
   try {
     const htmlResponse = await fetch(targetUrl.toString(), {

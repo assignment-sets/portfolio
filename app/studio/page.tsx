@@ -27,7 +27,7 @@ export default async function StudioPage({ searchParams }: StudioPageProps) {
   const { key } = await searchParams;
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("studio_session")?.value;
-  const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
+  const studioSecret = process.env.STUDIO_SECRET;
 
   const isAuthorized =
     Boolean(studioSecret) &&

@@ -4,13 +4,13 @@ import { cookies } from "next/headers";
 export async function GET() {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get("studio_session")?.value;
-  const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
+  const studioSecret = process.env.STUDIO_SECRET;
   const authenticated = Boolean(studioSecret) && sessionToken === studioSecret;
   return NextResponse.json({ authenticated });
 }
 
 export async function POST(req: NextRequest) {
-  const studioSecret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
+  const studioSecret = process.env.STUDIO_SECRET;
   if (!studioSecret) {
     return NextResponse.json({ error: "STUDIO_SECRET not configured" }, { status: 500 });
   }

@@ -51,6 +51,17 @@ export async function POST(req: Request) {
       );
     }
 
+    // If Two-Factor Authentication is enabled, return 2FA challenge instead of setting session cookie
+    if (user.totpEnabled) {
+      const { create2FATempToken } = await import("@/lib/auth-studio");
+      const tempToken = create2FATempToken(normalizedUsername);
+      return NextResponse.json({
+        success: true,
+        requires2FA: true,
+        tempToken,
+      });
+    }
+
     const token = createSessionToken(normalizedUsername);
     const response = NextResponse.json({
       success: true,

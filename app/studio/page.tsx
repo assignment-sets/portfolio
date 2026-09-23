@@ -42,17 +42,25 @@ export default async function StudioPage() {
   let publishedBlogs = 0;
   let draftBlogs = 0;
   let initialPasskeys: Array<{ id: string; deviceName: string; createdAt: string }> = [];
+  let initialTotpEnabled = false;
 
   try {
-    const [availStatus, subCol, newsCol, blogsCol, passkeysCol] = await Promise.all([
+    const { getStudioUsersCollection } = await import("@/lib/auth-studio");
+    const [availStatus, subCol, newsCol, blogsCol, passkeysCol, usersCol] = await Promise.all([
       getAvailabilityStatus(),
       getSubscribersCollection().catch(() => null),
       getNewslettersCollection().catch(() => null),
       getBlogsCollection().catch(() => null),
       getStudioPasskeysCollection().catch(() => null),
+      getStudioUsersCollection().catch(() => null),
     ]);
 
     available = availStatus;
+
+    if (usersCol && session.username) {
+      const user = await usersCol.findOne({ username: session.username });
+      initialTotpEnabled = Boolean(user?.totpEnabled);
+    }
 
     if (subCol) {
       activeSubscribers = await subCol.countDocuments({ status: "active" });
@@ -96,6 +104,7 @@ export default async function StudioPage() {
         draftBlogs,
       }}
       initialPasskeys={initialPasskeys}
+      initialTotpEnabled={initialTotpEnabled}
     />
   );
 }

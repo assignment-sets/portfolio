@@ -88,9 +88,11 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-  } catch {
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[Passkey Generate Options Error]:", error?.message || err);
     return NextResponse.json(
-      { success: false, error: "Failed to generate passkey options." },
+      { success: false, error: error?.message || "Failed to generate passkey options." },
       { status: 500 }
     );
   }

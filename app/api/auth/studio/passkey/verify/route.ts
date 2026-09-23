@@ -49,11 +49,23 @@ export async function POST(req: Request) {
         );
       }
 
+      const origins = Array.from(
+        new Set(
+          [
+            origin,
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            process.env.NEXT_PUBLIC_SITE_URL,
+          ].filter(Boolean) as string[]
+        )
+      );
+
       const verification = await verifyRegistrationResponse({
         response: authResponse,
         expectedChallenge: challengeDoc.challenge,
-        expectedOrigin: origin,
+        expectedOrigin: origins,
         expectedRPID: rpID,
+        requireUserVerification: false,
       });
 
       if (!verification.verified || !verification.registrationInfo) {
@@ -104,10 +116,21 @@ export async function POST(req: Request) {
         );
       }
 
+      const origins = Array.from(
+        new Set(
+          [
+            origin,
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            process.env.NEXT_PUBLIC_SITE_URL,
+          ].filter(Boolean) as string[]
+        )
+      );
+
       const verification = await verifyAuthenticationResponse({
         response: authResponse,
         expectedChallenge: challengeDoc.challenge,
-        expectedOrigin: origin,
+        expectedOrigin: origins,
         expectedRPID: rpID,
         credential: {
           id: passkey.credentialID,
@@ -115,6 +138,7 @@ export async function POST(req: Request) {
           counter: passkey.counter,
           transports: passkey.transports as AuthenticatorTransport[] | undefined,
         },
+        requireUserVerification: false,
       });
 
       if (!verification.verified) {
@@ -147,10 +171,12 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-  } catch {
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[Passkey Verify Error]:", error?.message || err);
     return NextResponse.json(
-      { success: false, error: "Internal server error during passkey verification." },
-      { status: 500 }
+      { success: false, error: error?.message || "Passkey verification failed." },
+      { status: 400 }
     );
   }
 }

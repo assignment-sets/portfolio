@@ -137,6 +137,165 @@ export async function checkStudioAuth(req?: Request): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
+// Two-Factor Authentication (TOTP - RFC 6238 & Recovery Codes)
+// ---------------------------------------------------------------------------
+
+import * as OTPAuth from "otpauth";
+import QRCode from "qrcode";
+
+function getEncryptionKey(): Buffer {
+  const secret = getSessionSecret();
+  return crypto.createHash("sha256").update(`totp-secret-enc:${secret}`).digest();
+}
+
+export function encryptTotpSecret(plainBase32: string): { encrypted: string; iv: string; tag: string } {
+  const key = getEncryptionKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  let encrypted = cipher.update(plainBase32, "utf8", "hex");
+  encrypted += cipher.final("hex");
+  const tag = cipher.getAuthTag().toString("hex");
+  return {
+    encrypted,
+    iv: iv.toString("hex"),
+    tag,
+  };
+}
+
+export function decryptTotpSecret(encrypted: string, ivHex: string, tagHex: string): string | null {
+  try {
+    const key = getEncryptionKey();
+    const iv = Buffer.from(ivHex, "hex");
+    const tag = Buffer.from(tagHex, "hex");
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(tag);
+    let decrypted = decipher.update(encrypted, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateTotpSetup(username: string) {
+  const secret = new OTPAuth.Secret({ size: 20 });
+  const base32Secret = secret.base32;
+
+  const totp = new OTPAuth.TOTP({
+    issuer: "Gourab Portfolio Studio",
+    label: username,
+    algorithm: "SHA1",
+    digits: 6,
+    period: 30,
+    secret: secret,
+  });
+
+  const uri = totp.toString();
+  const qrCodeDataUrl = await QRCode.toDataURL(uri, {
+    margin: 2,
+    width: 240,
+    color: {
+      dark: "#000000",
+      light: "#ffffff",
+    },
+  });
+
+  const recoveryCodes: string[] = [];
+  for (let i = 0; i < 8; i++) {
+    const code = crypto.randomBytes(4).toString("hex").toUpperCase();
+    recoveryCodes.push(`${code.slice(0, 4)}-${code.slice(4, 8)}`);
+  }
+
+  return {
+    secret: base32Secret,
+    uri,
+    qrCodeDataUrl,
+    recoveryCodes,
+  };
+}
+
+export function verifyTotpCode(secretBase32: string, token: string): boolean {
+  try {
+    const totp = new OTPAuth.TOTP({
+      issuer: "Gourab Portfolio Studio",
+      algorithm: "SHA1",
+      digits: 6,
+      period: 30,
+      secret: OTPAuth.Secret.fromBase32(secretBase32),
+    });
+
+    const cleanToken = token.replace(/\s+/g, "");
+    const delta = totp.validate({ token: cleanToken, window: 1 });
+    return delta !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function hashRecoveryCode(code: string): string {
+  const normalized = code.replace(/[\s-]+/g, "").toUpperCase();
+  return crypto.createHash("sha256").update(normalized).digest("hex");
+}
+
+export function create2FATempToken(username: string): string {
+  const timestamp = Date.now().toString();
+  const secret = getSessionSecret();
+  const payload = `${username}.${timestamp}.2fa`;
+  const hmac = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  return `${payload}.${hmac}`;
+}
+
+export function verify2FATempToken(token: string | null | undefined): {
+  valid: boolean;
+  username?: string;
+} {
+  if (!token || typeof token !== "string") {
+    return { valid: false };
+  }
+
+  const parts = token.split(".");
+  if (parts.length !== 4) {
+    return { valid: false };
+  }
+
+  const [username, timestampStr, type, signature] = parts;
+  if (type !== "2fa") {
+    return { valid: false };
+  }
+
+  const timestamp = parseInt(timestampStr, 10);
+  if (isNaN(timestamp)) {
+    return { valid: false };
+  }
+
+  const now = Date.now();
+  // Valid for 5 minutes
+  if (now - timestamp > 5 * 60 * 1000 || timestamp > now + 60 * 1000) {
+    return { valid: false };
+  }
+
+  try {
+    const secret = getSessionSecret();
+    const payload = `${username}.${timestampStr}.2fa`;
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("hex");
+
+    const sigBuf = Buffer.from(signature, "hex");
+    const expBuf = Buffer.from(expectedSignature, "hex");
+
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      return { valid: false };
+    }
+
+    return { valid: true, username };
+  } catch {
+    return { valid: false };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // MongoDB Schemas & Collections
 // ---------------------------------------------------------------------------
 
@@ -144,6 +303,11 @@ export interface StudioUserDocument {
   username: string;
   passwordHash: string;
   salt: string;
+  totpEnabled?: boolean;
+  totpSecret?: string;
+  totpIv?: string;
+  totpTag?: string;
+  recoveryCodes?: string[];
   createdAt: Date;
   updatedAt?: Date;
 }

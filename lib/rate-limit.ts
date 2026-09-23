@@ -12,7 +12,8 @@ export interface FirewallRateLimitResult {
 /**
  * Rate Limiting via Vercel Firewall:
  * Relies on Vercel WAF rule `rule_rate_limit_email_endpoints_l0RL18` configured at the edge.
- * In production on Vercel, WAF blocks exceeding requests directly at the edge (5 req / 3600s).
+ * In production on Vercel, WAF blocks exceeding requests directly at the edge (20 req / 3600s).
+ * Protects: /api/send-email, /api/newsletter/subscribe, and /api/auth/studio/* endpoints.
  * Programmatic check provides defense-in-depth within the route handler.
  * In local development, gracefully returns { success: true }.
  */

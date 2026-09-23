@@ -14,10 +14,19 @@ import {
   STUDIO_COOKIE_NAME,
   STUDIO_COOKIE_OPTIONS,
 } from "@/lib/auth-studio";
+import { checkFirewallRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const rateLimit = await checkFirewallRateLimit(req);
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { success: false, error: rateLimit.error },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const { action, response: authResponse, deviceName } = body;

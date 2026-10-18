@@ -49,7 +49,7 @@ flowchart TD
 | `slug` | `string` | Yes | URL-safe identifier (indexed, unique across collection). |
 | `description` | `string` | No | Short excerpt or summary for search, OpenGraph, and list preview. |
 | `content` | `string` | Yes | Raw author-written Markdown content. |
-| `contentHtml` | `string` | Yes | Sanitized, compiled HTML generated via `marked` with GFM support. |
+| `contentHtml` | `string` | Yes | Sanitized, compiled HTML generated via Unified (`remark` + `rehype`), Shiki dual-theme syntax highlighting, Mermaid interception, and GitHub alerts. |
 | `status` | `string` | Yes | `"draft"` or `"published"`. Drafts return genuine 404 on public routes. |
 | `tags` | `string[]` | Yes | Categorical topic pills (e.g. `["Distributed Systems", "GenAI"]`). |
 | `coverImage` | `string` | No | Optional URL or path to hero banner image. |
@@ -172,7 +172,28 @@ Authenticated endpoint for blog post creation, updates, previews, and deletion.
 
 ---
 
-## 6. MongoDB Atlas Native Lucene Search Engine (`$search`)
+## 6. Rich Markdown Rendering Pipeline (`lib/blog-markdown.ts`)
+
+The blog platform uses the industry de facto standard Unified ecosystem for compiling and presenting technical Markdown:
+
+1. **Server-Side Compilation (`compileBlogMarkdown`)**:
+   - `unified` + `remark-parse` + `remark-gfm` (tables, tasklists, strikethrough, autolinks).
+   - `remark-github-blockquote-alert`: Parses `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, and `> [!CAUTION]` into semantic HTML alert containers with GitHub octicon SVGs.
+   - `remark-rehype` with `allowDangerousHtml: true`.
+   - `rehypeMermaid`: Intercepts `language-mermaid` code blocks before Shiki, preserving the raw diagram syntax inside `<div class="mermaid-diagram">` with loading skeletons.
+   - `@shikijs/rehype`: Performs server-side TextMate VS Code syntax highlighting with dual themes (`github-light` and `github-dark`), diff annotations (`[!code --]` / `[!code ++]`), line highlights (`[!code highlight]`), word highlights, and focus.
+   - `rehypeWrapCodeBlocks`: Wraps code blocks into `.code-block-wrapper` with a header indicating the language.
+   - `rehypeWrapTables`: Wraps `<table>` elements in `.table-wrapper` for mobile horizontal scrolling.
+   - `rehypeStringify` + `sanitizeBlogHtml`: Sandboxed HTML sanitization preserving CSS variables, SVG octicons, and style attributes while preventing XSS.
+
+2. **Client-Side Dynamic Enhancements (`BlogContentEnhancer.tsx`)**:
+   - **Zero-Bundle-Overhead Mermaid**: Dynamically imports `mermaid` *only* if diagram elements exist in the DOM.
+   - **Live Theme Synchronization**: Listens to `data-theme` attribute changes via `MutationObserver` and dynamically re-renders Mermaid SVGs with matching light/dark themes.
+   - **1-Click Copy Buttons**: Injects interactive clipboard copy buttons into code block headers with animated checkmarks and 2-second visual feedback.
+
+---
+
+## 7. MongoDB Atlas Native Lucene Search Engine (`$search`)
 
 The public blog feed uses **MongoDB Atlas Search** powered by Apache Lucene directly on the cluster, avoiding any in-memory buffering or client-side fuzzy search libraries:
 

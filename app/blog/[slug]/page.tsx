@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BlogShareButton from "@/components/BlogShareButton";
 import BlogEditButton from "@/components/BlogEditButton";
+import BlogContentEnhancer from "@/components/BlogContentEnhancer";
 import {
   getCachedBlogPostBySlug,
   getPublishedBlogSlugs,
@@ -142,6 +143,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             className="blog-post-body"
             dangerouslySetInnerHTML={{ __html: post.contentHtml }}
           />
+          <BlogContentEnhancer />
 
           {/* Article End Share Action */}
           <div className="blog-article-footer-share">

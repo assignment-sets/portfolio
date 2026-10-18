@@ -23,6 +23,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { calculateReadingTimeDetails } from "@/lib/reading-time";
+import BlogContentEnhancer from "@/components/BlogContentEnhancer";
 
 interface BlogItem {
   id: string;
@@ -594,11 +595,14 @@ export default function BlogStudioClient({
                 {isPreviewLoading ? (
                   <div className="studio-preview-loading">Rendering article preview...</div>
                 ) : (
-                  <div
-                    className="blog-post-body"
-                    style={{ padding: "32px 28px", maxWidth: "760px", margin: "0 auto" }}
-                    dangerouslySetInnerHTML={{ __html: previewHtml }}
-                  />
+                  <div className="blog-post-body-container">
+                    <div
+                      className="blog-post-body"
+                      style={{ padding: "32px 28px", maxWidth: "760px", margin: "0 auto" }}
+                      dangerouslySetInnerHTML={{ __html: previewHtml }}
+                    />
+                    <BlogContentEnhancer dependencyKey={previewHtml} />
+                  </div>
                 )}
               </div>
             )}

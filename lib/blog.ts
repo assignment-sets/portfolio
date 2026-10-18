@@ -1,8 +1,7 @@
 import { ObjectId } from "mongodb";
-import { marked } from "marked";
 import { unstable_cache } from "next/cache";
 import { getDb } from "./mongodb";
-import { sanitizeBlogHtml } from "./sanitize";
+import { compileBlogMarkdown } from "./blog-markdown";
 
 export interface BlogPost {
   _id?: ObjectId | string;
@@ -56,15 +55,11 @@ export async function getBlogsCollection() {
 }
 
 /**
- * Renders Markdown content into safe, semantic HTML.
+ * Renders Markdown content into safe, semantic HTML with Shiki syntax highlighting,
+ * dynamic Mermaid diagram support, GitHub alerts, and sanitized output.
  */
 export async function renderBlogMarkdown(content: string): Promise<string> {
-  marked.setOptions({
-    gfm: true,
-    breaks: true,
-  });
-  const rawHtml = await marked.parse(content);
-  return sanitizeBlogHtml(rawHtml);
+  return compileBlogMarkdown(content);
 }
 
 /**

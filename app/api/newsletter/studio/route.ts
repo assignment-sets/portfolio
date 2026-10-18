@@ -40,14 +40,14 @@ const deleteSchema = z.object({
 });
 
 const saveNewsletterSchema = z.object({
-  newsletterId: z.string().refine((val) => ObjectId.isValid(val), "Invalid newsletterId").optional(),
+  newsletterId: z.string().refine((val) => ObjectId.isValid(val), "Invalid newsletterId").nullable().optional(),
   title: z.string().trim().max(200).optional(),
   subject: z.string().trim().min(1, "Subject is required").max(200, "Subject cannot exceed 200 characters"),
   markdown: z.string().min(1, "Markdown is required").max(150000, "Markdown content exceeds 150KB limit"),
 });
 
 const dispatchNowSchema = z.object({
-  newsletterId: z.string().refine((val) => ObjectId.isValid(val), "Invalid newsletterId").optional(),
+  newsletterId: z.string().refine((val) => ObjectId.isValid(val), "Invalid newsletterId").nullable().optional(),
   title: z.string().trim().max(200).optional(),
   subject: z.string().trim().min(1, "Subject is required for dispatch").max(200, "Subject cannot exceed 200 characters"),
   markdown: z.string().min(1, "Markdown is required for dispatch").max(150000, "Markdown content exceeds 150KB limit"),
@@ -352,7 +352,7 @@ export async function POST(req: NextRequest) {
       });
 
       const result = await dispatchNewsletter({
-        newsletterId,
+        newsletterId: newsletterId || undefined,
         title: title || subject,
         subject,
         contentHtml,

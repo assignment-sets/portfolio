@@ -233,7 +233,7 @@ export default function BlogStudioClient({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: publish ? "publish" : "save_draft",
-            blogId: currentBlogId,
+            blogId: currentBlogId || undefined,
             title,
             slug: slug.trim(),
             description: description.trim(),

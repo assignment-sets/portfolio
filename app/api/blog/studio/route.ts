@@ -27,7 +27,7 @@ const deleteSchema = z.object({
 });
 
 const saveBlogSchema = z.object({
-  blogId: z.string().refine((val) => ObjectId.isValid(val), "Invalid blogId").optional(),
+  blogId: z.string().refine((val) => ObjectId.isValid(val), "Invalid blogId").nullable().optional(),
   title: z.string().trim().min(1, "Title is required").max(200, "Title cannot exceed 200 characters"),
   slug: z
     .string()

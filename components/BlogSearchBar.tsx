@@ -6,15 +6,23 @@ import { Search, X, Loader2 } from "lucide-react";
 
 interface BlogSearchBarProps {
   initialQuery?: string;
+  isLoading?: boolean;
 }
 
-export default function BlogSearchBar({ initialQuery = "" }: BlogSearchBarProps) {
+export default function BlogSearchBar({
+  initialQuery = "",
+  isLoading = false,
+}: BlogSearchBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [query, setQuery] = useState(initialQuery);
   const [isPending, startTransition] = useTransition();
+
+  const currentParam = (searchParams?.get("q") || "").trim();
+  const isQueryDirty = query.trim() !== currentParam;
+  const isSearching = isQueryDirty || isPending || Boolean(isLoading);
 
   // Global '/' keyboard shortcut to focus the search input
   useEffect(() => {
@@ -48,8 +56,7 @@ export default function BlogSearchBar({ initialQuery = "" }: BlogSearchBarProps)
 
   // Debounced live auto-search on query input change
   useEffect(() => {
-    const currentParam = searchParams?.get("q") || "";
-    if (query === currentParam) {
+    if (query.trim() === currentParam) {
       return;
     }
 
@@ -72,7 +79,11 @@ export default function BlogSearchBar({ initialQuery = "" }: BlogSearchBarProps)
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [query, router, searchParams]);
+  }, [query, currentParam, router, searchParams]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+  };
 
   const handleClear = () => {
     setQuery("");
@@ -110,7 +121,7 @@ export default function BlogSearchBar({ initialQuery = "" }: BlogSearchBarProps)
   return (
     <form onSubmit={handleSubmit} className="blog-search-form" role="search">
       <div className="blog-search-input-wrap">
-        {isPending ? (
+        {isSearching ? (
           <Loader2 size={16} className="blog-search-icon blog-search-spinner" aria-hidden="true" />
         ) : (
           <Search size={16} className="blog-search-icon" aria-hidden="true" />
@@ -119,13 +130,16 @@ export default function BlogSearchBar({ initialQuery = "" }: BlogSearchBarProps)
           ref={inputRef}
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleChange}
           placeholder="Search articles by topic, keywords, or title..."
           className="blog-search-input"
           aria-label="Search articles"
           autoComplete="off"
           spellCheck="false"
         />
+        {isSearching && (
+          <div className="blog-search-progress-bar" aria-hidden="true" />
+        )}
         {query ? (
           <button
             type="button"

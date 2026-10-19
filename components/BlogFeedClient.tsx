@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, ArrowLeft, ArrowRight } from "lucide-react";
+import { Search, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import BlogSearchBar from "@/components/BlogSearchBar";
 import BlogCardLink from "@/components/BlogCardLink";
 import type { PaginatedBlogPosts } from "@/lib/blog";
@@ -90,25 +90,28 @@ export default function BlogFeedClient({ initialData }: BlogFeedClientProps) {
   return (
     <>
       <div className="blog-search-container">
-        <BlogSearchBar initialQuery={searchQuery} />
+        <BlogSearchBar initialQuery={searchQuery} isLoading={isLoading} />
       </div>
 
       {searchQuery && (
         <div className="blog-search-status">
-          <span>
-            Showing {total} {total === 1 ? "result" : "results"} for{" "}
-            <strong>&ldquo;{searchQuery}&rdquo;</strong>
-          </span>
+          {isLoading ? (
+            <>
+              <Loader2 size={13} className="blog-search-spinner" aria-hidden="true" />
+              <span>
+                Searching for <strong>&ldquo;{searchQuery}&rdquo;</strong>...
+              </span>
+            </>
+          ) : (
+            <span>
+              Showing {total} {total === 1 ? "result" : "results"} for{" "}
+              <strong>&ldquo;{searchQuery}&rdquo;</strong>
+            </span>
+          )}
         </div>
       )}
 
-      <section
-        className="blog-list-section"
-        style={{
-          opacity: isLoading ? 0.6 : 1,
-          transition: "opacity 0.15s ease",
-        }}
-      >
+      <section className="blog-list-section">
         {posts.length === 0 ? (
           <div className="blog-empty-card">
             <div className="blog-empty-icon-wrap">

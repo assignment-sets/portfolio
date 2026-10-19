@@ -11,6 +11,7 @@ import {
   BlogPost,
 } from "@/lib/blog";
 import { escapeRegex } from "@/lib/sanitize";
+import { injectDynamicWatermark, verifyTextWatermark } from "@/lib/watermark";
 
 export const maxDuration = 60;
 
@@ -135,6 +136,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, html });
     }
 
+    // ACTION: Verify invisible cryptographic text watermark
+    if (action === "verify_watermark") {
+      const text = typeof body.text === "string" ? body.text : "";
+      if (!text.trim()) {
+        return NextResponse.json({ error: "Text content is required for verification." }, { status: 400 });
+      }
+
+      const result = verifyTextWatermark(text);
+      return NextResponse.json({ success: true, result });
+    }
+
     // ACTION: Delete Blog Post permanently
     if (action === "delete") {
       const parsed = deleteSchema.safeParse(body);
@@ -207,8 +219,12 @@ export async function POST(req: NextRequest) {
         finalSlug = `${finalSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
       }
 
-      const contentHtml = await renderBlogMarkdown(markdown);
-      const readingTimeMinutes = calculateReadingTime(markdown);
+      const finalMarkdown = isPublish
+        ? injectDynamicWatermark(markdown, finalSlug)
+        : markdown;
+
+      const contentHtml = await renderBlogMarkdown(finalMarkdown);
+      const readingTimeMinutes = calculateReadingTime(finalMarkdown);
       const parsedTags = Array.isArray(tags)
         ? tags.map((t) => String(t).trim()).filter(Boolean)
         : typeof tags === "string"
@@ -231,7 +247,7 @@ export async function POST(req: NextRequest) {
               title,
               slug: finalSlug,
               description: description || "",
-              content: markdown,
+              content: finalMarkdown,
               contentHtml,
               status,
               tags: parsedTags,
@@ -271,7 +287,7 @@ export async function POST(req: NextRequest) {
         title,
         slug: finalSlug,
         description: description || "",
-        content: markdown,
+        content: finalMarkdown,
         contentHtml,
         status,
         tags: parsedTags,

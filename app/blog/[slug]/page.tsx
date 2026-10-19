@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import BlogShareButton from "@/components/BlogShareButton";
 import BlogEditButton from "@/components/BlogEditButton";
 import BlogContentEnhancer from "@/components/BlogContentEnhancer";
+import BlogMarkdownActions from "@/components/BlogMarkdownActions";
 import {
   getCachedBlogPostBySlug,
   getPublishedBlogSlugs,
@@ -94,6 +95,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </Link>
             <div className="blog-header-actions">
               <BlogEditButton slug={post.slug} />
+              <BlogMarkdownActions
+                title={post.title}
+                slug={post.slug}
+                description={post.description}
+                publishedDate={isoDate}
+                markdown={post.content}
+                variant="header"
+              />
               <BlogShareButton
                 title={post.title}
                 slug={post.slug}
@@ -145,8 +154,16 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           />
           <BlogContentEnhancer />
 
-          {/* Article End Share Action */}
-          <div className="blog-article-footer-share">
+          {/* Article End Actions */}
+          <div className="blog-article-footer-actions">
+            <BlogMarkdownActions
+              title={post.title}
+              slug={post.slug}
+              description={post.description}
+              publishedDate={isoDate}
+              markdown={post.content}
+              variant="footer"
+            />
             <BlogShareButton
               title={post.title}
               slug={post.slug}

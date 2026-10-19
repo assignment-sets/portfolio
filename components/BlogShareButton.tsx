@@ -177,10 +177,10 @@ export default function BlogShareButton({
           type="button"
           onClick={handleOpenModal}
           className="blog-share-btn"
+          title="Share article"
           aria-label="Share article"
         >
           <Share2 size={14} />
-          <span>Share</span>
         </button>
       ) : (
         <button

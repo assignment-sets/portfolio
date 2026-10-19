@@ -34,6 +34,8 @@ flowchart TD
 | `blog_article_click`  | `{ post_title: string, slug: string, location: "card_title" \| "read_more" }` | `BlogCardLink.tsx` | Identifies which essays generate reader interest            |
 | `blog_share_modal_open` | `{ post_title: string, slug: string, location: "header" \| "footer" }` | `BlogShareButton.tsx` | Measures engagement with article sharing dialog             |
 | `blog_share_click`    | `{ post_title: string, slug: string, channel: "copy" \| "x" \| "linkedin" \| "whatsapp" \| "email", location: "header" \| "footer" }` | `BlogShareButton.tsx` | Measures distribution channel preference and link copies    |
+| `blog_copy_markdown`  | `{ post_title: string, slug: string, location: "header" \| "footer" }` | `BlogMarkdownActions.tsx` | Measures direct full-text Markdown copying by readers      |
+| `blog_download_markdown` | `{ post_title: string, slug: string, location: "header" \| "footer" }` | `BlogMarkdownActions.tsx` | Measures offline Markdown file downloads by readers         |
 
 ---
 

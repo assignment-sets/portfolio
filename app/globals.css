@@ -2266,7 +2266,44 @@ footer {
 .blog-header-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.blog-markdown-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.blog-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.blog-action-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--card-bg);
+}
+
+.blog-action-btn.active-copied,
+.blog-action-btn.active-downloaded {
+  color: #2ea043;
+  border-color: #2ea043;
+  background: rgba(46, 160, 67, 0.08);
 }
 
 .blog-edit-admin-btn {
@@ -2276,7 +2313,7 @@ footer {
   background: var(--tag-bg);
   border: 1px solid var(--border);
   color: var(--text-mid);
-  padding: 4px 10px;
+  padding: 5px 10px;
   border-radius: 4px;
   font-family: inherit;
   font-size: 0.8rem;
@@ -2309,11 +2346,12 @@ footer {
 .blog-share-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text-mid);
-  padding: 4px 10px;
+  padding: 6px 8px;
   border-radius: 4px;
   font-family: inherit;
   font-size: 0.8rem;
@@ -2328,12 +2366,45 @@ footer {
   background: var(--card-bg);
 }
 
-.blog-article-footer-share {
+.blog-article-footer-share,
+.blog-article-footer-actions {
   margin-top: 48px;
   padding-top: 24px;
   border-top: 1px solid var(--border);
   display: flex;
-  justify-content: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.blog-action-footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.blog-action-footer-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--bg-soft);
+}
+
+.blog-action-footer-btn.active-copied,
+.blog-action-footer-btn.active-downloaded {
+  color: #2ea043;
+  border-color: #2ea043;
+  background: rgba(46, 160, 67, 0.08);
 }
 
 .blog-share-footer-btn {

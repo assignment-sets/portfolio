@@ -544,13 +544,27 @@ export default function StudioHubClient({
             </div>
           </div>
 
-          <div className="studio-hub-card-actions">
+          <div className="studio-hub-card-actions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Link
               href="/studio/blog"
               className="studio-hub-action-btn primary"
+              style={{ flex: "1 1 180px" }}
             >
               <span>Manage Blog Posts</span>
               <ArrowRight size={14} />
+            </Link>
+            <Link
+              href="/studio/blog/verify"
+              className="studio-hub-action-btn"
+              style={{
+                flex: "1 1 180px",
+                background: "var(--bg-card)",
+                color: "var(--text)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <span>Watermark Verifier</span>
+              <ShieldCheck size={14} />
             </Link>
           </div>
         </section>

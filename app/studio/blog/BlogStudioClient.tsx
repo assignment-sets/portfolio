@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Mail,
   ArrowLeft,
+  ShieldCheck,
 } from "lucide-react";
 import { calculateReadingTimeDetails } from "@/lib/reading-time";
 import BlogContentEnhancer from "@/components/BlogContentEnhancer";
@@ -463,6 +464,17 @@ export default function BlogStudioClient({
           >
             <Mail size={13} />
             <span>Newsletter Studio</span>
+          </Link>
+
+          {/* Watermark Verifier */}
+          <Link
+            href="/studio/blog/verify"
+            className="studio-metric"
+            style={{ textDecoration: "none" }}
+            title="Verify Watermark & Plagiarism"
+          >
+            <ShieldCheck size={13} />
+            <span>Verify Watermark</span>
           </Link>
 
           <button

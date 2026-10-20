@@ -3,6 +3,9 @@ import { unstable_cache } from "next/cache";
 import { getDb } from "./mongodb";
 import { compileBlogMarkdown } from "./blog-markdown";
 
+export const DEFAULT_BLOG_COVER_IMAGE =
+  "https://ik.imagekit.io/grbmndlassts/default-blog-cover-panoramic.jpg";
+
 export interface BlogPost {
   _id?: ObjectId | string;
   title: string;

@@ -12,6 +12,7 @@ import {
   getPublishedBlogSlugs,
   formatBlogDate,
   toIsoDateString,
+  DEFAULT_BLOG_COVER_IMAGE,
 } from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
@@ -45,6 +46,7 @@ export async function generateMetadata({
     `Read ${post.title} on Gourab Mondal's technical engineering blog.`;
 
   const publishedIso = toIsoDateString(post.publishedAt || post.createdAt);
+  const coverUrl = post.coverImage || DEFAULT_BLOG_COVER_IMAGE;
 
   return {
     title,
@@ -59,11 +61,18 @@ export async function generateMetadata({
       publishedTime: publishedIso,
       authors: ["Gourab Mondal"],
       tags: post.tags,
+      images: [
+        {
+          url: coverUrl,
+          alt: post.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [coverUrl],
     },
   };
 }
@@ -81,10 +90,27 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const formattedDate = formatBlogDate(post.publishedAt || post.createdAt, "long");
   const isoDate = toIsoDateString(post.publishedAt || post.createdAt);
+  const coverUrl = post.coverImage || DEFAULT_BLOG_COVER_IMAGE;
 
   return (
     <>
       <Navbar />
+
+      {/* Notion-style Panoramic Top Cover Banner */}
+      {coverUrl && (
+        <div className="blog-cover-hero">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={coverUrl}
+            alt={post.title}
+            className="blog-cover-hero-img"
+            loading="eager"
+            decoding="async"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      )}
+
       <main className="wrap blog-post-wrap">
         <article className="blog-article">
           {/* Back Navigation & Share Button */}

@@ -107,6 +107,7 @@ export default function BlogStudioClient({
       ? "Distributed Systems, Architecture, Backend"
       : ""
   );
+  const [coverImage, setCoverImage] = useState(initialTarget?.coverImage || "");
   const [markdown, setMarkdown] = useState(
     initialTarget?.content || STARTER_BLOG
   );
@@ -239,6 +240,7 @@ export default function BlogStudioClient({
             title,
             slug: slug.trim(),
             description: description.trim(),
+            coverImage: coverImage.trim(),
             markdown,
             tags: tagsArray,
             status: publish ? "published" : "draft",
@@ -267,7 +269,7 @@ export default function BlogStudioClient({
               status: publish ? "published" : "draft",
               tags: tagsArray,
               readingTimeMinutes: Math.max(1, Math.ceil(markdown.split(/\s+/).length / 200)),
-              coverImage: "",
+              coverImage: coverImage.trim(),
               content: markdown,
               publishedAt: publish ? new Date().toISOString() : currentBlog?.publishedAt,
               createdAt: currentBlog?.createdAt || new Date().toISOString(),
@@ -336,6 +338,7 @@ export default function BlogStudioClient({
     setSlug("");
     setDescription("");
     setTagsInput("");
+    setCoverImage("");
     setMarkdown(STARTER_BLOG);
     setStatus("draft");
     setFeedback({
@@ -350,6 +353,7 @@ export default function BlogStudioClient({
     setSlug(b.slug);
     setDescription(b.description || "");
     setTagsInput((b.tags || []).join(", "));
+    setCoverImage(b.coverImage || "");
     setMarkdown(b.content || "");
     setStatus(b.status === "published" ? "published" : "draft");
     setFeedback({
@@ -537,6 +541,31 @@ export default function BlogStudioClient({
                 placeholder="Backend, Architecture, GenAI, Next.js"
                 className="studio-input"
               />
+            </div>
+
+            <div className="studio-field" style={{ gridColumn: "1 / -1" }}>
+              <label className="studio-label">Cover Image URL (optional)</label>
+              <input
+                type="url"
+                value={coverImage}
+                onChange={(e) => setCoverImage(e.target.value)}
+                placeholder="https://ik.imagekit.io/... or https://images.unsplash.com/..."
+                className="studio-input"
+              />
+              {coverImage.trim() && (
+                <div className="studio-cover-preview-row">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={coverImage.trim()}
+                    alt="Cover preview"
+                    className="studio-cover-thumb"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
+                  />
+                  <span className="studio-cover-preview-label">Live thumbnail preview</span>
+                </div>
+              )}
             </div>
           </div>
 

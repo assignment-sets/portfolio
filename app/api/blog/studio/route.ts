@@ -49,7 +49,16 @@ const saveBlogSchema = z.object({
     .trim()
     .max(1000, "Cover image URL cannot exceed 1000 characters")
     .refine(
-      (val) => !val || val.startsWith("http://") || val.startsWith("https://") || val.startsWith("/"),
+      (val) => {
+        if (!val) return true;
+        if (val.startsWith("/")) return !val.includes(" ") && !val.includes("\n");
+        try {
+          const u = new URL(val);
+          return u.protocol === "https:" || u.protocol === "http:";
+        } catch {
+          return false;
+        }
+      },
       "Cover image must be a valid HTTP(S) URL or absolute path"
     )
     .optional(),

@@ -21,6 +21,12 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://gourabmondal.vercel.app/blog",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blogs | Gourab Mondal",
+    description:
+      "Technical essays and engineering notes on distributed systems, backend architectures, performance, and AI agents.",
+  },
 };
 
 export const revalidate = 3600; // 1-hour ISR edge cache fallback

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import ThemeInitScript from "@/components/ThemeInitScript";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
@@ -7,10 +7,22 @@ import OfflineNotice from "@/components/OfflineNotice";
 import NavigationLoader from "@/components/NavigationLoader";
 import "./globals.css";
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#161616" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://gourabmondal.vercel.app"),
   alternates: {
     canonical: "/",
+  },
+  formatDetection: {
+    telephone: false,
   },
   icons: {
     icon: [

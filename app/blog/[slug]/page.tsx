@@ -96,21 +96,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     <>
       <Navbar />
 
-      {/* Notion-style Panoramic Top Cover Banner */}
-      {coverUrl && (
-        <div className="blog-cover-hero">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={coverUrl}
-            alt={post.title}
-            className="blog-cover-hero-img"
-            loading="eager"
-            decoding="async"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-      )}
-
       <main className="wrap blog-post-wrap">
         <article className="blog-article">
           {/* Back Navigation & Share Button */}
@@ -137,6 +122,21 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               />
             </div>
           </div>
+
+          {/* Panoramic Cover Banner (Aligned with Content Column) */}
+          {coverUrl && (
+            <div className="blog-cover-hero">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coverUrl}
+                alt={post.title}
+                className="blog-cover-hero-img"
+                loading="eager"
+                decoding="async"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          )}
 
           {/* Article Header */}
           <header className="blog-header">

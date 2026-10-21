@@ -462,6 +462,54 @@ h2 {
   font-size: 0.78rem;
   color: var(--text-dim);
   font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 1.4em;
+}
+
+.exp-note-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  display: inline-block;
+  opacity: 0.6;
+  animation: pulsePing 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+.exp-note-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.exp-note-text.fading {
+  opacity: 0;
+  transform: translateY(2px);
+}
+
+.exp-note-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-style: normal;
+  transition: opacity 0.15s ease;
+}
+
+.exp-note-link:hover {
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exp-note-text {
+    transition: none !important;
+  }
+  .exp-note-dot {
+    animation: none !important;
+  }
 }
 
 /* ── EDUCATION ── */

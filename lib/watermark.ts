@@ -96,7 +96,14 @@ function generateHmac(slug: string, timestamp: number, secret: string): string {
 }
 
 function getSecret(explicit?: string): string {
-  return explicit || process.env.WATERMARK_SECRET || process.env.STUDIO_SECRET || "portfolio-salt";
+  const secret = explicit || process.env.WATERMARK_SECRET || process.env.STUDIO_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("WATERMARK_SECRET or STUDIO_SECRET is required in production.");
+    }
+    return "dev-watermark-secret-fallback-32chars";
+  }
+  return secret;
 }
 
 /**

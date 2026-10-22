@@ -41,7 +41,7 @@ export function verifyPassword(password: string, hash: string, salt: string): bo
 // ---------------------------------------------------------------------------
 
 function getSessionSecret(): string {
-  const secret = process.env.STUDIO_SECRET || process.env.CRON_SECRET;
+  const secret = process.env.STUDIO_SECRET;
   if (!secret) {
     if (process.env.NODE_ENV === "production") {
       throw new Error("STUDIO_SECRET is not configured in environment variables.");
@@ -334,6 +334,7 @@ export interface StudioChallengeDocument {
 export async function getStudioUsersCollection() {
   const db = await getDb();
   const col = db.collection<StudioUserDocument>("studio_users");
+  col.createIndex({ username: 1 }, { unique: true }).catch(() => {});
   return col;
 }
 

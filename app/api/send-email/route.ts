@@ -151,7 +151,7 @@ export async function POST(req: Request) {
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; color: #71717a; font-weight: 500;">Received</td>
-                  <td style="padding: 6px 0; color: #71717a; font-size: 0.82rem;">${new Date().toUTCString()} &middot; IP: ${clientIp}</td>
+                  <td style="padding: 6px 0; color: #71717a; font-size: 0.82rem;">${new Date().toUTCString()} &middot; IP: ${escapeHtml(clientIp)}</td>
                 </tr>
               </tbody>
             </table>

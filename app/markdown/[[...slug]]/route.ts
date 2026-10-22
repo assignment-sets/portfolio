@@ -107,7 +107,9 @@ export async function GET(
   { params }: { params: Promise<{ slug?: string[] }> }
 ) {
   const { slug = [] } = await params;
-  const targetPath = slug.length === 0 ? "/" : `/${slug.join("/")}`;
+  const rawPath = slug.length === 0 ? "/" : `/${slug.join("/")}`;
+  // Prevent protocol-relative authority escape (e.g. //evil.com or /\evil.com)
+  const targetPath = rawPath.replace(/^[/\\]+/, "/");
 
   // Build target URL for internal SSR fetch (locked to safe origins to prevent SSRF)
   const defaultOrigin =
@@ -128,6 +130,22 @@ export async function GET(
   }
 
   const targetUrl = new URL(targetPath, safeOrigin);
+
+  // Strict post-resolution origin assertion: guarantee internal requests never leave safeOrigin
+  try {
+    const expectedOrigin = new URL(safeOrigin).origin;
+    if (targetUrl.origin !== expectedOrigin) {
+      return new Response("Invalid internal target origin\n", {
+        status: 400,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+  } catch {
+    return new Response("Invalid origin configuration\n", {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
 
   try {
     const htmlResponse = await fetch(targetUrl.toString(), {
@@ -186,7 +204,7 @@ export async function GET(
         "Content-Type": "text/markdown; charset=utf-8",
         Vary: "Accept",
         "Cache-Control":
-          "public, max-age=3600, s-maxage=86400, stale-while-revalidate",
+          "public, max-age=3600, s-maxage=3600, stale-while-revalidate",
       },
     });
   } catch (error) {

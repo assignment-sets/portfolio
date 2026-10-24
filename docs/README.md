@@ -46,6 +46,11 @@ This platform is engineered using **Next.js 16 (App Router)**, **React 19**, and
 - [**Offline Architecture & PWA Caching**](offline/pwa-and-offline-caching.md)
   - Details the native Service Worker (`public/sw.js`), Network-First HTML caching, Next.js 16 Web App Manifest (`app/manifest.ts`), and React 19 `useSyncExternalStore` offline indicator.
 
+### Security & Transport Hardening
+
+- [**HTTP Security Headers & Defensive Transport Architecture**](security/http-headers-and-transport-security.md)
+  - Details defensive browser headers (CSP, COOP, HSTS, Permissions-Policy), route-specific caching policies, AI endpoint CORS/CORP, `Clear-Site-Data` logout invalidation, Sec-Fetch CSRF guards, SSRF protocol normalization, and cryptographic secret isolation.
+
 ### Performance & Caching
 
 - [**Caching & Revalidation Architecture**](caching/caching-and-revalidation.md)
@@ -83,4 +88,16 @@ curl -i -H "Accept: text/markdown, text/html;q=0.9" http://localhost:3000/
 
 ```bash
 curl -i http://localhost:3000/index.md
+```
+
+### 6. Test Security Headers (COOP, CSP, HSTS, Permissions-Policy)
+
+```bash
+curl -I http://localhost:3000/
+```
+
+### 7. Test Cross-Site CSRF Rejection (Sec-Fetch-Site)
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:3000/api/send-email -H "sec-fetch-site: cross-site"
 ```

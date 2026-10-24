@@ -10,100 +10,90 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Portfolio — Agent Guide
 
-> Next.js 16 (App Router) + React 19 + Tailwind CSS v4. Single-page portfolio with AI/LLM UX, newsletter, offline/PWA, analytics, and SEO subsystems.
+> Next.js 16 (App Router) + React 19 + Tailwind CSS v4. Single-page portfolio with AI/LLM UX, blog, newsletter, studio, offline PWA, and security subsystems.
 
-## 1. Commands
+## 1. Commands & Verification
 
 ```bash
 npm run dev              # next dev (Turbopack)
-npm run build            # next build — verify after layout/proxy/manifest changes
+npm run build            # next build — verify after layout, proxy, or config changes
 npm run lint             # eslint (next/core-web-vitals + typescript flat config)
 npm run newsletter:sync  # tsx scripts/newsletter-sync.ts — upsert newsletters/issue-01.md
 npm run newsletter:test  # tsx scripts/newsletter-sync.ts --test — send preview via Gmail SMTP
 ```
 
-No test suite. Verify manually via `curl` cheatsheet in `docs/README.md:47`.
+Verify changes via `npm run lint` and `npm run build`.
 
-## 2. Project Structure
+## 2. Project Layout
 
 ```
 app/                      # App Router
   layout.tsx              # RootLayout + metadataBase + jsonLd + GA + ThemeInit + SW
   page.tsx                # Home — composes Navbar/Hero/Skills/Projects/Experience/Education/Contact/Footer
-  globals.css             # 1700+ lines, CSS-vars light/dark, no Tailwind utilities in JSX
+  globals.css             # CSS-vars light/dark, hand-rolled classes, no Tailwind utilities in JSX
   sitemap.ts / robots.ts / manifest.ts / opengraph-image.tsx
-  llms.txt/route.ts       # text/plain, cache 3600/86400, from data/portfolio.ts + github.ts
-  markdown/[[...slug]]/route.ts  # text/markdown, internal fetch + node-html-markdown
-  studio/page.tsx + StudioHubClient.tsx        # force-dynamic, central studio control hub & passkey manager
-  studio/login/page.tsx + StudioLoginClient.tsx # password + WebAuthn passkey sign-in
-  studio/register/page.tsx + StudioRegisterClient.tsx # single-admin bootstrap registration
-  studio/newsletter/page.tsx + NewsletterStudioClient.tsx  # force-dynamic newsletter UI
-  studio/blog/page.tsx + BlogStudioClient.tsx  # force-dynamic blog authoring UI
-  blog/page.tsx + blog/[slug]/page.tsx         # Public blog feed (paginated) & article reader
+  llms.txt/route.ts       # AI summary, CORS: *, CORP: cross-origin, cache 3600/86400
+  markdown/[[...slug]]/route.ts  # SSR DOM-to-markdown, SSRF-guarded, CORS: *, cache 3600/86400
+  studio/                 # force-dynamic admin control hub & passkey manager
+    login/ + register/    # Password + WebAuthn passkey sign-in & single-admin bootstrap
+    newsletter/ + blog/   # Newsletter dispatch & blog authoring studio
+    blog/verify/          # In-browser steganographic watermark verifier
+  blog/ + blog/[slug]/    # Public paginated blog feed & article reader
   api/
-    availability/route.ts            # Authenticated work availability toggle & status API
-    send-email/route.ts              # Zod + rate-limit + nodemailer (Gmail)
-    auth/studio/                     # Dedicated auth API: register, login, logout, status, passkey
-    newsletter/{subscribe,unsubscribe,dispatch}/route.ts
-    newsletter/studio/route.ts
-    blog/route.ts                    # Public paginated blog query API
-    blog/studio/route.ts             # Authenticated blog CRUD & search API
-    [...catchAll]/route.ts           # JSON 404 for unknown API routes
-components/               # 15 client/server comps — Navbar, Hero, Projects, ThemeToggle, etc.
-lib/                      # auth-studio.ts, accept.ts, github.ts, mongodb.ts, newsletter.ts, blog.ts, email-template.ts, sanitize.ts, analytics.ts, rate-limit.ts
-data/portfolio.ts         # Single source of truth — pinnedRepoNames, skills, projects, education
-public/sw.js              # Vanilla SW — Network-First HTML, Stale-While-Revalidate assets
-proxy.ts                  # Next.js 16 Proxy (replaces middleware.ts) — content negotiation
-scripts/newsletter-sync.ts
-docs/                     # Engineering docs — ai-ux, newsletter, blog, offline, analytics, data, seo, api
-vercel.json               # Cron: GET /api/newsletter/dispatch Mondays 10:00 UTC
+    availability/route.ts # Work availability toggle with ISR tag revalidation
+    send-email/route.ts   # Zod + rate-limit + Sec-Fetch CSRF guard + nodemailer
+    auth/studio/          # Register, login, logout (Clear-Site-Data), passkey, 2FA
+    newsletter/           # Subscribe (Sec-Fetch guard), unsubscribe, cron dispatch
+    blog/ + blog/studio/  # Public blog query API & authenticated blog CRUD
+components/               # Client & server UI components (Navbar, Hero, ThemeToggle, etc.)
+lib/                      # auth-studio, watermark, mongodb, newsletter, blog, rate-limit, accept
+data/portfolio.ts         # Source of truth — pinned repos, skills, experience, education
+public/sw.js              # Vanilla SW (portfolio-cache-v2) — Network-First HTML, SWR assets
+proxy.ts                  # Next.js 16 Proxy (NOT middleware.ts) — RFC 9110 Accept content negotiation
+docs/                     # In-depth architectural documentation
 ```
 
-## 3. Critical Conventions (Do Not Break)
+## 3. Critical Boundaries & Conventions (Do Not Break)
 
-- **Prioritize ripgrep over grep:** Always try to work with rg first before using grep for code search
-- **Next.js 16 Proxy:** File is `proxy.ts` (not `middleware.ts`) exporting `proxy()` + `config.matcher`. See `proxy.ts:1-60`. Matcher skips `api`, `_next/*`, `llms.txt`, `markdown`, static assets. Always check `x-internal-render: true` bypass before rewriting.
-- **Content Negotiation:** `lib/accept.ts` parses RFC 9110 `Accept` with `q` + specificity. `proxy.ts` rewrites to `/markdown/*` when `text/markdown` wins or path ends `.md`; returns `406` if neither `text/html` nor `text/markdown` is acceptable and `*/*` absent. Must `appendVaryAccept` / set `Vary: Accept`.
-- **Markdown Compilation:** `app/markdown/[[...slug]]/route.ts` does an internal `fetch` with `x-internal-render`, extracts `<main>`, strips `script/style/svg/button/form`, reformats via `node-html-markdown`. `Vary` + `Cache-Control public max-age 3600 s-maxage 86400` required.
-- **Theme:** FOUC-free via `components/ThemeInitScript.tsx` using `useServerInsertedHTML` inline IIFE (`localStorage` + `prefers-color-scheme`). `globals.css` uses `data-theme` + CSS vars + `@media prefers-color-scheme` fallback. `ThemeToggle.tsx` tracks `theme_toggle` and listens to `matchMedia`.
-- **Analytics:** `@next/third-parties/google` `<GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!}>` in `app/layout.tsx:166`. Custom events via `lib/analytics.ts:10` `trackEvent()` wrapping `sendGAEvent` with try/catch (ad-blocker resilience). Never hardcode GA ID — use `NEXT_PUBLIC_GA_ID` (`G-8LVL1N08S6`).
-- **MongoDB:** `lib/mongodb.ts` globals-caches client for HMR; `getDb()` defaults to `MONGODB_DB || "portfolio"`. Newsletters use atomic `deliveredEmails` `$addToSet` + sequential Gmail SMTP send (≤50, 500/day free, resume-safe via `$nin deliveredEmails`).
-- **Studio Security:** Single-admin model authenticated via `/studio/login` with WebAuthn Passkeys or password. Session token is stored in an 8-hour `studio_session` httpOnly cookie (`secure`, `lax`). Guarded by `lib/auth-studio.ts` `checkStudioAuth()`. CLI scripts use `Authorization: Bearer <STUDIO_SECRET>`. Two secrets: `CRON_SECRET` (Vercel Cron Bearer) vs `STUDIO_SECRET` (admin session signing & CLI header).
-- **Rate Limiting:** Network-edge rate limiting with `@vercel/firewall` SDK verification and in-memory rate limiting fallbacks. Contact form checks `navigator.onLine` client-side before POST.
-- **Offline/PWA:** `public/sw.js` `portfolio-cache-v1` precaches `/`, favicons, `/llms.txt`; `ServiceWorkerRegister.tsx` registers only in `production`; `OfflineNotice.tsx` uses `useSyncExternalStore` (hydration-safe) with 3s reconnect toast.
-- **Styling:** `@tailwindcss/postcss` imported in `globals.css` but components use hand-rolled class names (`.skill-row`, `.project-card`, etc.). Do not add Tailwind utility classes without checking existing pattern.
-- **SEO:** `metadataBase https://gourabmondal.vercel.app`, `alternates.canonical`, `openGraph`, `twitter`, JSON-LD `Person` + `ProfilePage` graph in `app/layout.tsx:84`. `app/sitemap.ts` + `robots.ts` + `<link rel=alternate>` for `llms.txt` and `text/markdown`.
+- **Prioritize ripgrep**: Use `rg` first before `grep`.
+- **Next.js 16 Proxy**: File is `proxy.ts` (not `middleware.ts`). Matcher skips `api`, `_next/*`, `llms.txt`, `markdown`, static assets. Respect `x-internal-render: true` bypass before rewriting.
+- **Content Negotiation (RFC 9110)**: `lib/accept.ts` parses `Accept` with `q` specificity. Rewrites to `/markdown/*` when `text/markdown` wins or path ends `.md`; returns 406 if both HTML and markdown rejected. Always set `Vary: Accept` (`appendVaryAccept`).
+- **Markdown Route SSRF Defense**: In `app/markdown/[[...slug]]/route.ts`, sanitize leading slashes (`rawPath.replace(/^[/\\]+/, "/")`) and assert `targetUrl.origin === expectedOrigin`.
+- **Styling**: `@tailwindcss/postcss` in `globals.css` with hand-rolled class names (`.skill-row`, `.project-card`). Do not add Tailwind utility classes in JSX without checking existing pattern.
+- **Theme**: FOUC-free via `components/ThemeInitScript.tsx` inline IIFE (`localStorage` + `prefers-color-scheme`).
+- **Offline SW**: Registers only when `NODE_ENV === "production"`. `/sw.js` headers: strict `no-cache` and `script-src 'self'`.
 
-## 4. Environment
+## 4. Security & Caching Architecture
 
-Required vars (see `.env.example:1-22`):
+- **Security Headers (`next.config.ts`)**: Global CSP (GA4, ImageKit, GitHub avatars, WebAuthn), `Cross-Origin-Opener-Policy: same-origin-allow-popups`, `Permissions-Policy` (disables hardware, allows `publickey-credentials-*=(self)`), `X-Frame-Options: DENY`, `nosniff`, `HSTS preload`.
+- **Route Cache Isolation**: `/studio/(.*)` and `/api/auth/(.*)` must strictly serve `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` and `Pragma: no-cache`.
+- **AI Endpoints Access**: `/llms.txt` and `/markdown/(.*)` explicitly serve `Access-Control-Allow-Origin: *` and `Cross-Origin-Resource-Policy: cross-origin`.
+- **Session Logout**: `POST /api/auth/studio/logout` sets `Clear-Site-Data: "cookies", "storage"`.
+- **CSRF Defense**: Mutating endpoints (`POST /api/send-email`, `POST /api/newsletter/subscribe`) inspect `sec-fetch-site` and reject `cross-site` requests with 403.
+- **Secret Isolation**: `STUDIO_SECRET` (admin session signing & TOTP encryption) is strictly isolated from `CRON_SECRET` (Vercel cron bearer).
+- **Watermarking**: `lib/watermark.ts` injects invisible zero-width HMAC fingerprints into author blog content; verified at `/studio/blog/verify`.
 
+## 5. Environment Variables
+
+Required in `.env.local` and Vercel Dashboard:
 ```
 MONGODB_URI / MONGODB_DB=portfoliodb
-CRON_SECRET / STUDIO_SECRET
-EMAIL_USER / EMAIL_PASS  # Gmail app password for /api/send-email + newsletter dispatch (500/day free)
+STUDIO_SECRET            # Admin session HMAC signing, TOTP key derivation, CLI Bearer
+CRON_SECRET              # Vercel Cron dispatch bearer token
+EMAIL_USER / EMAIL_PASS  # Gmail SMTP app password for contact form & newsletter delivery
 NEXT_PUBLIC_SITE_URL=https://gourabmondal.vercel.app
 NEXT_PUBLIC_GA_ID=G-8LVL1N08S6
 ```
 
-Vercel needs `NEXT_PUBLIC_GA_ID`, `CRON_SECRET`, `STUDIO_SECRET`, `MONGODB_URI`, `EMAIL_USER`, `EMAIL_PASS` set in dashboard; redeploy after changing `NEXT_PUBLIC_*`.
+## 6. Architecture Docs Reference
 
-## 5. Docs Before Code
-
-- AI UX: `docs/ai-ux/llms-txt.md`, `docs/ai-ux/markdown-content-negotiation.md`
+- Security & Headers: `docs/security/http-headers-and-transport-security.md`
+- Caching & Revalidation: `docs/caching/caching-and-revalidation.md`
+- AI UX & Markdown: `docs/ai-ux/llms-txt.md`, `docs/ai-ux/markdown-content-negotiation.md`
 - Newsletter: `docs/newsletter/newsletter-architecture.md`
 - Blog: `docs/blog/blog-architecture.md`
-- Offline: `docs/offline/pwa-and-offline-caching.md`
-- Analytics: `docs/analytics/event-tracking.md` (7 events)
-- Data: `docs/data/github-integration.md` (ISR 3600, pinned repos, fallback)
+- Offline / PWA: `docs/offline/pwa-and-offline-caching.md`
+- Analytics: `docs/analytics/event-tracking.md`
+- Dynamic GitHub Data: `docs/data/github-integration.md`
 - SEO: `docs/seo/search-engine-optimization.md`
-- API: `docs/api/contact-email.md`
-
-## 6. Common Pitfalls
-
-- Deleting the `BEGIN:nextjs-agent-rules` block — `next dev` re-creates it as an uncommitted diff; keep it.
-- Creating `middleware.ts` instead of `proxy.ts` — breaks on Next 16.
-- Forgetting `Vary: Accept` on rewritten/markdown responses — breaks edge cache correctness.
-- Registering SW in development — breaks HMR; guard with `NODE_ENV === "production"`.
-- Hardcoding GA ID or exposing `MONGODB_URI`/`CRON_SECRET` in client code.
-- Missing `x-internal-render` check — infinite rewrite loop for markdown route.
+- Contact API: `docs/api/contact-email.md`

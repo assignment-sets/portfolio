@@ -9,7 +9,16 @@ const SubscribeSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  // 1. Rate Limiting via Vercel Firewall (5 req / 3600s per IP)
+  // 1. CSRF Defense via Sec-Fetch-Site metadata
+  const secFetchSite = req.headers.get("sec-fetch-site");
+  if (secFetchSite === "cross-site") {
+    return NextResponse.json(
+      { error: "Cross-site requests not permitted" },
+      { status: 403 }
+    );
+  }
+
+  // 2. Rate Limiting via Vercel Firewall (5 req / 3600s per IP)
   const rateLimit = await checkFirewallRateLimit(req);
   if (!rateLimit.success) {
     return NextResponse.json(

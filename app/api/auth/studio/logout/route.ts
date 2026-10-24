@@ -9,6 +9,8 @@ export async function POST() {
     message: "Logged out successfully",
   });
 
+  response.headers.set("Clear-Site-Data", '"cookies", "storage"');
+
   response.cookies.set(STUDIO_COOKIE_NAME, "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

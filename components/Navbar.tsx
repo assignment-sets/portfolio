@@ -51,8 +51,9 @@ export default function Navbar() {
           className="nav-name"
           href="/#hero"
           onClick={() => setIsOpen(false)}
+          aria-label="Gourab Mondal"
         >
-          Gourab Mondal
+          GM
         </Link>
         <div className="nav-links-wrap">
           {/* Desktop links */}

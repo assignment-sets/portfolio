@@ -5,19 +5,19 @@
 }
 
 :root {
-  --bg: #ffffff;
-  --bg-soft: #f7f7f7;
-  --border: #e0e0e0;
-  --border-strong: #bbb;
-  --text: #111111;
-  --text-mid: #444444;
-  --text-dim: #686868;
-  --accent: #111111;
-  --nav-bg: rgba(255, 255, 255, 0.92);
-  --card-bg: #ffffff;
-  --input-bg: #ffffff;
-  --tag-bg: #f0f0f0;
-  --overlay-bg: rgba(255, 255, 255, 0.88);
+  --bg: #f4f4f0;
+  --bg-soft: #eaeae4;
+  --border: #deded8;
+  --border-strong: #b8b8b0;
+  --text: #1a1a1a;
+  --text-mid: #4a4a46;
+  --text-dim: #70706a;
+  --accent: #1a1a1a;
+  --nav-bg: rgba(244, 244, 240, 0.92);
+  --card-bg: #fafaf7;
+  --input-bg: #fafaf7;
+  --tag-bg: #eaeae4;
+  --overlay-bg: rgba(244, 244, 240, 0.88);
 }
 
 [data-theme="dark"] {

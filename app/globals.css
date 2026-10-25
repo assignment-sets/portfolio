@@ -229,7 +229,7 @@ section:last-of-type {
   justify-content: center;
   align-items: center;
   align-self: flex-start;
-  margin-top: -100px;
+  margin-top: -140px;
 }
 
 [data-theme="light"] .spark-id-card canvas {
@@ -274,11 +274,24 @@ section:last-of-type {
   text-decoration: none;
   border: 1px solid var(--border-strong);
   padding: 6px 16px;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .hero-links a:hover {
   background: var(--bg-soft);
+}
+
+.hero-links a.hero-primary {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+  font-weight: 500;
+}
+
+.hero-links a.hero-primary:hover {
+  background: var(--text-mid);
+  border-color: var(--text-mid);
+  color: var(--bg);
 }
 
 .avail-badge {

@@ -45,7 +45,7 @@ const CARD_CY = CARD_TOP + DH / 2;
 
 const MASK_SCALE = 2;
 const STRAP_ANGLE = 0.4;
-const STRAP_LENGTH = 430;
+const STRAP_LENGTH = 740;
 
 const TIER_ALPHA = [0.52, 0.84, 1];
 const TIER_WIDTH = [0.9, 1.05, 1.25];

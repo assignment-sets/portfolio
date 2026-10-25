@@ -62,6 +62,7 @@ export default function Hero({ isAvailable = true }: HeroProps) {
               href={portfolioData.resumeUrl}
               target="_blank"
               rel="noopener noreferrer"
+              className="hero-primary"
               aria-label="Download Gourab Mondal's resume PDF"
               onClick={() => trackEvent("resume_click", { location: "hero" })}
             >

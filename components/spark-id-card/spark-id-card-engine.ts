@@ -419,6 +419,83 @@ function buildStraps(groups: Particle[][]) {
         }
       }
     }
+
+    // Lower converging segment connecting the straps directly into the crimp clasp
+    for (let step = 0; step <= 9; step += 1.5) {
+      const progress = step / 9;
+      const by = -34 + progress * 9; // -34 down to -25
+      const bx = 190 + side * (15 - progress * 9); // converges from 190 ± 15 to 190 ± 6
+      const widthNow = 16.5 * (1 - progress * 0.42);
+
+      for (let k = -1; k <= 1; k += 0.16) {
+        const off = k * widthNow;
+        const edge = Math.abs(k) > 0.7;
+        const centerGap = Math.abs(k) < 0.08;
+        if (centerGap) continue;
+        const p = edge ? 0.85 : 0.25;
+        if (Math.random() > p) continue;
+
+        const px = bx + Math.cos(angle) * off;
+        const py = by + Math.sin(angle) * off;
+        const tier = Math.random() < 0.2 ? 0 : Math.random() < 0.58 ? 1 : 2;
+        const len = 2.4 + Math.random() * 3.6;
+        const cross = Math.random() < 0.28;
+        const strokeAngle = cross
+          ? angle + Math.PI / 2 + (Math.random() - 0.5) * 0.7
+          : angle + (Math.random() - 0.5) * 0.55;
+
+        pushParticle(
+          groups,
+          px - DW / 2,
+          py - DH / 2,
+          strokeAngle,
+          len,
+          tier,
+          1.3 + Math.random() * 0.5,
+        );
+      }
+    }
+  }
+
+  // Metal crimp clasp tightly binding both straps together (y: -29 to -23, x: 178 to 202)
+  for (let cy = -29; cy <= -23; cy += 1.4) {
+    for (let cx = 178; cx <= 202; cx += 2.0) {
+      if (Math.random() < 0.22) continue;
+      const isRim = cy === -29 || cy >= -24 || cx <= 180 || cx >= 200;
+      const tier = isRim ? 2 : Math.random() < 0.45 ? 2 : 1;
+      const strokeAngle =
+        (Math.random() < 0.75 ? 0 : Math.PI / 2) + (Math.random() - 0.5) * 0.4;
+      const len = 2.8 + Math.random() * 3.5;
+      pushParticle(
+        groups,
+        cx - DW / 2 + (Math.random() - 0.5) * 0.8,
+        cy - DH / 2 + (Math.random() - 0.5) * 0.8,
+        strokeAngle,
+        len,
+        tier,
+        1.4 + Math.random() * 0.5,
+      );
+    }
+  }
+
+  // Folded fabric loop passing from the clasp down through the ring opening (y: -23 to -5, x: 184 to 196)
+  for (let ly = -23; ly <= -5; ly += 1.5) {
+    for (let lx = 184; lx <= 196; lx += 2.0) {
+      if (Math.random() < 0.25) continue;
+      const edge = lx <= 185 || lx >= 195;
+      const tier = edge ? (Math.random() < 0.7 ? 2 : 1) : Math.random() < 0.4 ? 1 : 0;
+      const strokeAngle = Math.PI / 2 + (Math.random() - 0.5) * 0.35;
+      const len = 3.2 + Math.random() * 3.8;
+      pushParticle(
+        groups,
+        lx - DW / 2 + (Math.random() - 0.5) * 0.8,
+        ly - DH / 2 + (Math.random() - 0.5) * 0.8,
+        strokeAngle,
+        len,
+        tier,
+        1.2 + Math.random() * 0.4,
+      );
+    }
   }
 
   // Metal loop the straps thread through, sitting on the card's top edge.

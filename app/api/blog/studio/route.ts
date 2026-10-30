@@ -23,6 +23,10 @@ const renderPreviewSchema = z.object({
   markdown: z.string().min(1, "Markdown is required").max(150000, "Markdown content exceeds 150KB limit"),
 });
 
+const verifyWatermarkSchema = z.object({
+  text: z.string().trim().min(1, "Text content is required for verification").max(150000, "Text content exceeds 150KB limit"),
+});
+
 const deleteSchema = z.object({
   blogId: z.string().refine((val) => ObjectId.isValid(val), "Valid blogId is required"),
 });
@@ -147,12 +151,12 @@ export async function POST(req: NextRequest) {
 
     // ACTION: Verify invisible cryptographic text watermark
     if (action === "verify_watermark") {
-      const text = typeof body.text === "string" ? body.text : "";
-      if (!text.trim()) {
-        return NextResponse.json({ error: "Text content is required for verification." }, { status: 400 });
+      const parsed = verifyWatermarkSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
       }
 
-      const result = verifyTextWatermark(text);
+      const result = verifyTextWatermark(parsed.data.text);
       return NextResponse.json({ success: true, result });
     }
 

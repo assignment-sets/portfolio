@@ -1,7 +1,7 @@
 // Service Worker for Gourab Mondal Portfolio
 // Provides minimal offline caching for static shell, favicons, and core assets with Network-First strategy.
 
-const CACHE_NAME = "portfolio-cache-v3";
+const CACHE_NAME = "portfolio-cache-v4";
 
 const PRECACHE_ASSETS = [
   "/",
@@ -9,6 +9,9 @@ const PRECACHE_ASSETS = [
   "/icons8-favicon-windows-11-filled-32.png",
   "/icons8-favicon-windows-11-filled-72.png",
   "/icons8-favicon-windows-11-filled-70.png",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/apple-touch-icon.png",
   "/llms.txt",
 ];
 
@@ -16,7 +19,20 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_ASSETS))
+      .then(async (cache) => {
+        await Promise.allSettled(
+          PRECACHE_ASSETS.map(async (url) => {
+            try {
+              const res = await fetch(url);
+              if (res.ok) {
+                await cache.put(url, res);
+              }
+            } catch (err) {
+              console.warn(`[SW] Precache failed for ${url}:`, err);
+            }
+          })
+        );
+      })
       .then(() => self.skipWaiting())
   );
 });

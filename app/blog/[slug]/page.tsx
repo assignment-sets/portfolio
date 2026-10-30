@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BlogShareButton from "@/components/BlogShareButton";
@@ -126,14 +127,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           {/* Panoramic Cover Banner (Aligned with Content Column) */}
           {coverUrl && (
             <div className="blog-cover-hero">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={coverUrl}
                 alt={post.title}
+                fill
+                priority
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 768px, 800px"
                 className="blog-cover-hero-img"
-                loading="eager"
-                decoding="async"
-                referrerPolicy="no-referrer"
+                unoptimized={!coverUrl.startsWith("https://ik.imagekit.io/")}
               />
             </div>
           )}

@@ -96,7 +96,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     <>
       <Navbar />
 
-      <main className="wrap blog-post-wrap">
+      <main className="wrap blog-post-wrap" id="main-content">
         <article className="blog-article">
           {/* Back Navigation & Share Button */}
           <div className="blog-back-nav">

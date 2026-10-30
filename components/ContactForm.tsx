@@ -99,7 +99,9 @@ export default function ContactForm() {
             id="name"
             name="name"
             required
+            autoComplete="name"
             placeholder="Your name"
+            aria-describedby={status.message ? "form-status" : undefined}
           />
         </div>
         <div className="field">
@@ -109,7 +111,9 @@ export default function ContactForm() {
             id="email"
             name="email"
             required
+            autoComplete="email"
             placeholder="your@email.com"
+            aria-describedby={status.message ? "form-status" : undefined}
           />
         </div>
       </div>
@@ -137,7 +141,12 @@ export default function ContactForm() {
           {isSubmitting ? "Sending..." : "Send"}
         </button>
         {status.message && (
-          <span id="form-status" className={status.type}>
+          <span
+            id="form-status"
+            role="status"
+            aria-live="polite"
+            className={status.type}
+          >
             {status.message}
           </span>
         )}

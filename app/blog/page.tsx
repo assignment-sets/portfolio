@@ -54,7 +54,7 @@ export default async function BlogIndexPage() {
   return (
     <>
       <Navbar />
-      <main className="wrap blog-index-wrap">
+      <main className="wrap blog-index-wrap" id="main-content">
         <header className="blog-index-header">
           <h1 className="blog-index-title">Blogs</h1>
         </header>

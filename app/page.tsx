@@ -18,7 +18,7 @@ export default async function Home() {
   return (
     <>
       <Navbar />
-      <main className="wrap">
+      <main className="wrap" id="main-content">
         <Hero isAvailable={isAvailable} />
         <Skills />
         <Projects projects={projects} />

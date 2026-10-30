@@ -94,7 +94,7 @@ export default function BlogFeedClient({ initialData }: BlogFeedClientProps) {
       </div>
 
       {searchQuery && (
-        <div className="blog-search-status">
+        <div className="blog-search-status" role="status" aria-live="polite">
           {isLoading ? (
             <>
               <Loader2 size={13} className="blog-search-spinner" aria-hidden="true" />

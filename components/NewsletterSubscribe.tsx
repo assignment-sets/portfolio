@@ -91,7 +91,7 @@ export default function NewsletterSubscribe() {
   return (
     <div className="newsletter-box">
       <div className="newsletter-header">
-        <h4 className="newsletter-title">Newsletter</h4>
+        <h3 className="newsletter-title">Newsletter</h3>
         <p className="newsletter-desc">
           Occasional notes on backend architecture, GenAI experiments, and
           building reliable software. No spam, ever.

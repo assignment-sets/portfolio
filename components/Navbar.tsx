@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
@@ -16,6 +16,8 @@ const navLinks = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   // Lock body scrolling when full-screen menu is active
   useEffect(() => {
@@ -29,16 +31,41 @@ export default function Navbar() {
     };
   }, [isOpen]);
 
-  // Close overlay on Escape key press
+  // Trap focus and close overlay on Escape key press
   useEffect(() => {
+    if (!isOpen) return;
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "Tab") {
+        const overlay = overlayRef.current;
+        const toggle = toggleRef.current;
+        if (!overlay || !toggle) return;
+
+        const focusable = [
+          toggle,
+          ...Array.from(overlay.querySelectorAll<HTMLElement>("a, button")),
+        ];
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     }
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
+
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
@@ -69,6 +96,7 @@ export default function Navbar() {
 
           {/* Borderless mobile menu toggle (single persistent button, 0 layout shift) */}
           <button
+            ref={toggleRef}
             type="button"
             className="nav-mobile-toggle"
             onClick={() => setIsOpen((prev) => !prev)}
@@ -76,6 +104,7 @@ export default function Navbar() {
               isOpen ? "Close navigation menu" : "Open navigation menu"
             }
             aria-expanded={isOpen}
+            aria-controls="mobile-nav-panel"
           >
             {isOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -84,7 +113,14 @@ export default function Navbar() {
 
       {/* Full-Screen Mobile Navigation Overlay (anchored beneath persistent navbar) */}
       {isOpen && (
-        <div className="nav-fullscreen-overlay">
+        <div
+          ref={overlayRef}
+          id="mobile-nav-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile Navigation"
+          className="nav-fullscreen-overlay"
+        >
           <div className="nav-fullscreen-body">
             {navLinks.map((link) => (
               <Link

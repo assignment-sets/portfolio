@@ -126,7 +126,7 @@ export default function Footer({
 
           {/* Navigation Column */}
           <div>
-            <h4 className="footer-col-title">Navigation</h4>
+            <h3 className="footer-col-title">Navigation</h3>
             <ul className="footer-links">
               <li>
                 <Link href="/#hero" className="footer-link">
@@ -163,7 +163,7 @@ export default function Footer({
 
           {/* Featured Code Column */}
           <div>
-            <h4 className="footer-col-title">Featured Code</h4>
+            <h3 className="footer-col-title">Featured Code</h3>
             <ul className="footer-links">
               {displayProjects.slice(0, 4).map((project) => (
                 <li key={project.title}>
@@ -206,7 +206,7 @@ export default function Footer({
 
           {/* Connect & Protocols Column */}
           <div>
-            <h4 className="footer-col-title">Connect & Protocols</h4>
+            <h3 className="footer-col-title">Connect & Protocols</h3>
             <ul className="footer-links">
               <li>
                 <a

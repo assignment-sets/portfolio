@@ -57,6 +57,37 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+}
+
+/* ── ACCESSIBILITY & KEYBOARD FOCUS ── */
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.skip-link {
+  position: absolute;
+  top: -120px;
+  left: 1rem;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--text);
+  color: var(--bg);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 500;
+  border-radius: 4px;
+  transition: top 0.15s ease;
+}
+
+.skip-link:focus-visible {
+  top: 1rem;
 }
 
 body {
@@ -662,6 +693,12 @@ form {
 .field input:focus,
 .field textarea:focus {
   border-color: var(--border-strong);
+}
+
+.field input:user-invalid,
+.field textarea:user-invalid,
+.newsletter-input:user-invalid {
+  border-color: #d93025;
 }
 
 .field textarea {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import {
   Share2,
   Check,
@@ -34,6 +34,9 @@ export default function BlogShareButton({
 }: BlogShareButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   const clientOrigin = useSyncExternalStore(
     subscribeToOrigin,
@@ -80,15 +83,47 @@ export default function BlogShareButton({
 
   const shareUrl = copyUtmUrl;
 
-  // Lock body scroll and listen for Escape key when modal is open
+  const handleCloseModal = () => {
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  // Lock body scroll, focus close button, and trap Tab key when modal is open
   useEffect(() => {
     if (!isOpen) return;
 
     document.body.style.overflow = "hidden";
+    closeBtnRef.current?.focus();
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setIsOpen(false);
+        e.preventDefault();
+        handleCloseModal();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const modal = modalRef.current;
+        if (!modal) return;
+
+        const focusable = Array.from(
+          modal.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        );
+
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     }
 
@@ -174,6 +209,7 @@ export default function BlogShareButton({
     <>
       {variant === "header" ? (
         <button
+          ref={triggerRef}
           type="button"
           onClick={handleOpenModal}
           className="blog-share-btn"
@@ -184,6 +220,7 @@ export default function BlogShareButton({
         </button>
       ) : (
         <button
+          ref={triggerRef}
           type="button"
           onClick={handleOpenModal}
           className="blog-share-footer-btn"
@@ -195,15 +232,13 @@ export default function BlogShareButton({
 
       {/* Share Modal Dialog */}
       {isOpen && (
-        <div
-          className="blog-share-backdrop"
-          onClick={() => setIsOpen(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="share-modal-title"
-        >
+        <div className="blog-share-backdrop" onClick={handleCloseModal}>
           <div
+            ref={modalRef}
             className="blog-share-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="share-modal-title"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="blog-share-header">
@@ -211,9 +246,10 @@ export default function BlogShareButton({
                 Share Article
               </h3>
               <button
+                ref={closeBtnRef}
                 type="button"
                 className="blog-share-close-btn"
-                onClick={() => setIsOpen(false)}
+                onClick={handleCloseModal}
                 aria-label="Close dialog"
               >
                 <CloseIcon size={16} />

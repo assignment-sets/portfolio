@@ -5,6 +5,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import OfflineNotice from "@/components/OfflineNotice";
 import NavigationLoader from "@/components/NavigationLoader";
+import AnalyticsDelegation from "@/components/AnalyticsDelegation";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -40,8 +41,8 @@ export const metadata: Metadata = {
     ],
     apple: [
       {
-        url: "/icons8-favicon-windows-11-filled-72.png",
-        sizes: "72x72",
+        url: "/apple-touch-icon.png",
+        sizes: "180x180",
         type: "image/png",
       },
     ],
@@ -178,6 +179,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ServiceWorkerRegister />
+        <AnalyticsDelegation />
         <Suspense fallback={null}>
           <NavigationLoader />
         </Suspense>

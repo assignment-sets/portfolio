@@ -7,9 +7,11 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       "B.Tech CS student. Interested mainly in backend architectures and GenAI applications.",
     start_url: "/",
+    scope: "/",
+    id: "/",
     display: "standalone",
-    background_color: "#0c0c0c",
-    theme_color: "#0c0c0c",
+    background_color: "#161616",
+    theme_color: "#161616",
     icons: [
       {
         src: "/icons8-favicon-windows-11-filled-32.png",
@@ -20,6 +22,24 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/icons8-favicon-windows-11-filled-72.png",
         sizes: "72x72",
         type: "image/png",
+      },
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
       {
         src: "/favicon.ico",

@@ -1,7 +1,4 @@
-"use client";
-
 import { portfolioData } from "@/data/portfolio";
-import { trackEvent } from "@/lib/analytics";
 import { SparkIdCard } from "@/components/spark-id-card";
 
 interface HeroProps {
@@ -26,7 +23,8 @@ export default function Hero({ isAvailable = true }: HeroProps) {
             <a
               href={`mailto:${portfolioData.email}`}
               aria-label={`Send email to ${portfolioData.email}`}
-              onClick={() => trackEvent("email_click", { location: "hero" })}
+              data-track-event="email_click"
+              data-track-params={JSON.stringify({ location: "hero" })}
             >
               Email
             </a>
@@ -35,12 +33,11 @@ export default function Hero({ isAvailable = true }: HeroProps) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Visit Gourab Mondal's GitHub profile"
-              onClick={() =>
-                trackEvent("social_click", {
-                  platform: "github",
-                  location: "hero",
-                })
-              }
+              data-track-event="social_click"
+              data-track-params={JSON.stringify({
+                platform: "github",
+                location: "hero",
+              })}
             >
               GitHub
             </a>
@@ -49,12 +46,11 @@ export default function Hero({ isAvailable = true }: HeroProps) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Visit Gourab Mondal's LinkedIn profile"
-              onClick={() =>
-                trackEvent("social_click", {
-                  platform: "linkedin",
-                  location: "hero",
-                })
-              }
+              data-track-event="social_click"
+              data-track-params={JSON.stringify({
+                platform: "linkedin",
+                location: "hero",
+              })}
             >
               LinkedIn
             </a>
@@ -64,7 +60,8 @@ export default function Hero({ isAvailable = true }: HeroProps) {
               rel="noopener noreferrer"
               className="hero-primary"
               aria-label="Download Gourab Mondal's resume PDF"
-              onClick={() => trackEvent("resume_click", { location: "hero" })}
+              data-track-event="resume_click"
+              data-track-params={JSON.stringify({ location: "hero" })}
             >
               Resume &darr;
             </a>

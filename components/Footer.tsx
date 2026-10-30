@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import {
   Mail,
@@ -8,12 +6,11 @@ import {
   Bot,
   Compass,
   ArrowUpRight,
-  ArrowUp,
 } from "lucide-react";
 import { portfolioData } from "@/data/portfolio";
 import type { Project } from "@/data/portfolio";
-import { trackEvent } from "@/lib/analytics";
 import NewsletterSubscribe from "@/components/NewsletterSubscribe";
+import BackToTopButton from "@/components/BackToTopButton";
 
 interface FooterProps {
   projects?: Project[];
@@ -47,12 +44,11 @@ export default function Footer({
                 className="footer-social-btn"
                 aria-label="GitHub Profile"
                 title="GitHub Profile"
-                onClick={() =>
-                  trackEvent("social_click", {
-                    platform: "github",
-                    location: "footer",
-                  })
-                }
+                data-track-event="social_click"
+                data-track-params={JSON.stringify({
+                  platform: "github",
+                  location: "footer",
+                })}
               >
                 <svg
                   width="16"
@@ -75,12 +71,11 @@ export default function Footer({
                 className="footer-social-btn"
                 aria-label="LinkedIn Profile"
                 title="LinkedIn Profile"
-                onClick={() =>
-                  trackEvent("social_click", {
-                    platform: "linkedin",
-                    location: "footer",
-                  })
-                }
+                data-track-event="social_click"
+                data-track-params={JSON.stringify({
+                  platform: "linkedin",
+                  location: "footer",
+                })}
               >
                 <svg
                   width="16"
@@ -102,9 +97,8 @@ export default function Footer({
                 className="footer-social-btn"
                 aria-label="Email Me"
                 title="Email Me"
-                onClick={() =>
-                  trackEvent("email_click", { location: "footer" })
-                }
+                data-track-event="email_click"
+                data-track-params={JSON.stringify({ location: "footer" })}
               >
                 <Mail size={16} />
               </a>
@@ -115,9 +109,8 @@ export default function Footer({
                 className="footer-social-btn"
                 aria-label="Download Resume"
                 title="Download Resume"
-                onClick={() =>
-                  trackEvent("resume_click", { location: "footer" })
-                }
+                data-track-event="resume_click"
+                data-track-params={JSON.stringify({ location: "footer" })}
               >
                 <FileText size={16} />
               </a>
@@ -172,12 +165,11 @@ export default function Footer({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="footer-link"
-                    onClick={() =>
-                      trackEvent("project_click", {
-                        project_name: project.title,
-                        location: "footer",
-                      })
-                    }
+                    data-track-event="project_click"
+                    data-track-params={JSON.stringify({
+                      project_name: project.title,
+                      location: "footer",
+                    })}
                   >
                     <span>{project.title}</span>
                     <ArrowUpRight size={13} className="footer-link-icon" />
@@ -191,12 +183,11 @@ export default function Footer({
                   rel="noopener noreferrer"
                   className="footer-link"
                   style={{ marginTop: "4px" }}
-                  onClick={() =>
-                    trackEvent("project_click", {
-                      project_name: "all_repositories",
-                      location: "footer",
-                    })
-                  }
+                  data-track-event="project_click"
+                  data-track-params={JSON.stringify({
+                    project_name: "all_repositories",
+                    location: "footer",
+                  })}
                 >
                   <span>All Repositories &rarr;</span>
                 </a>
@@ -212,9 +203,10 @@ export default function Footer({
                 <a
                   href={`mailto:${portfolioData.email}`}
                   className="footer-link"
-                  onClick={() =>
-                    trackEvent("email_click", { location: "footer_text" })
-                  }
+                  data-track-event="email_click"
+                  data-track-params={JSON.stringify({
+                    location: "footer_text",
+                  })}
                 >
                   <Mail size={14} className="footer-link-icon" />
                   <span>{portfolioData.email}</span>
@@ -230,9 +222,8 @@ export default function Footer({
                 <a
                   href="/llms.txt"
                   className="footer-link"
-                  onClick={() =>
-                    trackEvent("protocol_click", { target: "llms.txt" })
-                  }
+                  data-track-event="protocol_click"
+                  data-track-params={JSON.stringify({ target: "llms.txt" })}
                 >
                   <Bot size={14} className="footer-link-icon" />
                   <span>llms.txt (Agent Feed)</span>
@@ -242,9 +233,8 @@ export default function Footer({
                 <a
                   href="/sitemap.xml"
                   className="footer-link"
-                  onClick={() =>
-                    trackEvent("protocol_click", { target: "sitemap" })
-                  }
+                  data-track-event="protocol_click"
+                  data-track-params={JSON.stringify({ target: "sitemap" })}
                 >
                   <Compass size={14} className="footer-link-icon" />
                   <span>Sitemap XML</span>
@@ -257,18 +247,7 @@ export default function Footer({
         {/* Sub-Footer Row */}
         <div className="footer-bottom">
           <span>&copy; 2026 {portfolioData.name}. All rights reserved.</span>
-          <button
-            type="button"
-            onClick={() => {
-              trackEvent("scroll_top_click", { location: "footer" });
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className="footer-back-to-top"
-            aria-label="Back to top of page"
-          >
-            <span>Back to top</span>
-            <ArrowUp size={13} />
-          </button>
+          <BackToTopButton />
         </div>
       </div>
     </footer>

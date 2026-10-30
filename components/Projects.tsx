@@ -1,9 +1,6 @@
-"use client";
-
 import { Scale } from "lucide-react";
 import { portfolioData } from "@/data/portfolio";
 import type { Project } from "@/data/portfolio";
-import { trackEvent } from "@/lib/analytics";
 
 interface ProjectsProps {
   projects?: Project[];
@@ -52,12 +49,11 @@ export default function Projects({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`View ${project.title} source code on GitHub`}
-                onClick={() =>
-                  trackEvent("project_click", {
-                    project_name: project.title,
-                    url: project.githubUrl,
-                  })
-                }
+                data-track-event="project_click"
+                data-track-params={JSON.stringify({
+                  project_name: project.title,
+                  url: project.githubUrl,
+                })}
               >
                 GitHub &rarr;
               </a>
@@ -79,12 +75,11 @@ export default function Projects({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="View all public repositories on GitHub"
-          onClick={() =>
-            trackEvent("project_click", {
-              project_name: "all_repositories",
-              url: `${portfolioData.github}?tab=repositories`,
-            })
-          }
+          data-track-event="project_click"
+          data-track-params={JSON.stringify({
+            project_name: "all_repositories",
+            url: `${portfolioData.github}?tab=repositories`,
+          })}
         >
           see more on GitHub &rarr;
         </a>

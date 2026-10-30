@@ -27,17 +27,22 @@ export default function Experience() {
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
+    let fadeTimeout: NodeJS.Timeout | null = null;
+
     const timer = setInterval(() => {
       setIsFading(true);
-      const timeout = setTimeout(() => {
+      fadeTimeout = setTimeout(() => {
         setIndex((prev) => (prev + 1) % PHRASES.length);
         setIsFading(false);
       }, 200);
-
-      return () => clearTimeout(timeout);
     }, 3200);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (fadeTimeout) {
+        clearTimeout(fadeTimeout);
+      }
+    };
   }, []);
 
   const current = PHRASES[index];

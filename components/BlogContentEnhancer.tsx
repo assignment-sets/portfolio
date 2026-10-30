@@ -101,7 +101,7 @@ export default function BlogContentEnhancer({ dependencyKey }: BlogContentEnhanc
           startOnLoad: false,
           theme: isDark ? "dark" : "neutral",
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          securityLevel: "loose",
+          securityLevel: "antiscript",
           themeVariables: isDark
             ? {
                 primaryColor: "#2a2a2a",

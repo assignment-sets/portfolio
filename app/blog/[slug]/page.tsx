@@ -16,6 +16,7 @@ import {
   DEFAULT_BLOG_COVER_IMAGE,
 } from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
+import { SITE_URL } from "@/lib/site";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
 
 export const revalidate = 86400; // 24-hour ISR edge cache fallback
@@ -54,6 +55,9 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `/blog/${post.slug}`,
+      types: {
+        "text/markdown": `/blog/${post.slug}.md`,
+      },
     },
     openGraph: {
       title,
@@ -91,10 +95,85 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const formattedDate = formatBlogDate(post.publishedAt || post.createdAt, "long");
   const isoDate = toIsoDateString(post.publishedAt || post.createdAt);
+  const modifiedIso = toIsoDateString(
+    post.updatedAt || post.publishedAt || post.createdAt
+  );
   const coverUrl = post.coverImage || DEFAULT_BLOG_COVER_IMAGE;
+
+  const articleUrl = `${SITE_URL}/blog/${post.slug}`;
+  const blogListingUrl = `${SITE_URL}/blog`;
+
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BlogPosting",
+        "@id": `${articleUrl}#article`,
+        isPartOf: {
+          "@type": "Blog",
+          "@id": `${blogListingUrl}#blog`,
+          name: "Gourab Mondal | Technical Blog",
+          url: blogListingUrl,
+        },
+        headline: post.title,
+        description:
+          post.description ||
+          `Read ${post.title} on Gourab Mondal's technical engineering blog.`,
+        url: articleUrl,
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": articleUrl,
+        },
+        image: coverUrl,
+        datePublished: isoDate,
+        dateModified: modifiedIso,
+        author: {
+          "@type": "Person",
+          "@id": `${SITE_URL}/#person`,
+          name: "Gourab Mondal",
+          url: SITE_URL,
+        },
+        publisher: {
+          "@type": "Person",
+          "@id": `${SITE_URL}/#person`,
+          name: "Gourab Mondal",
+          url: SITE_URL,
+        },
+        keywords: post.tags,
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${articleUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: SITE_URL,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Blog",
+            item: blogListingUrl,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: post.title,
+            item: articleUrl,
+          },
+        ],
+      },
+    ],
+  };
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <Navbar />
 
       <main className="wrap blog-post-wrap" id="main-content">

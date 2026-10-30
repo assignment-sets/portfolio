@@ -6,6 +6,7 @@ import BlogFeedClient from "@/components/BlogFeedClient";
 import BlogSearchBar from "@/components/BlogSearchBar";
 import { getCachedPublishedBlogPosts } from "@/lib/blog";
 import { getFeaturedProjects } from "@/lib/github";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Blogs | Gourab Mondal",
@@ -13,13 +14,16 @@ export const metadata: Metadata = {
     "Technical essays and engineering notes on distributed systems, backend architectures, performance, and AI agents.",
   alternates: {
     canonical: "/blog",
+    types: {
+      "text/markdown": "/blog.md",
+    },
   },
   openGraph: {
     title: "Blogs | Gourab Mondal",
     description:
       "Technical essays and engineering notes on distributed systems, backend architectures, performance, and AI agents.",
     type: "website",
-    url: "https://gourabmondal.vercel.app/blog",
+    url: `${SITE_URL}/blog`,
   },
   twitter: {
     card: "summary_large_image",

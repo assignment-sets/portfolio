@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import PageLoader from "./PageLoader";
 
@@ -10,8 +10,9 @@ export default function NavigationLoader() {
   const currentUrl = `${pathname}?${searchParams?.toString() || ""}`;
   const [prevUrl, setPrevUrl] = useState(currentUrl);
   const [loading, setLoading] = useState(false);
+  const pendingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Reset loader during render whenever pathname or searchParams change
+  // Reset loader during render whenever pathname or searchParams change (React pattern for state derived from props)
   if (prevUrl !== currentUrl) {
     setPrevUrl(currentUrl);
     if (loading) {
@@ -19,14 +20,36 @@ export default function NavigationLoader() {
     }
   }
 
+  // Clear any pending navigation timer when URL changes
+  useEffect(() => {
+    return () => {
+      if (pendingTimerRef.current) {
+        clearTimeout(pendingTimerRef.current);
+        pendingTimerRef.current = null;
+      }
+    };
+  }, [currentUrl]);
+
   // Reset loader on browser back/forward navigation
   useEffect(() => {
-    const handlePopState = () => setLoading(false);
+    const handlePopState = () => {
+      if (pendingTimerRef.current) {
+        clearTimeout(pendingTimerRef.current);
+        pendingTimerRef.current = null;
+      }
+      setLoading(false);
+    };
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (pendingTimerRef.current) {
+        clearTimeout(pendingTimerRef.current);
+      }
+    };
   }, []);
 
-  // Intercept internal link clicks to display immediate navigation feedback
+  // Intercept internal link clicks to display navigation feedback after a 150ms threshold.
+  // Instantaneous/prefetched navigations complete before 150ms, avoiding unnecessary visual flashing.
   useEffect(() => {
     function handleClick(event: MouseEvent) {
       const target = event.target as HTMLElement | null;
@@ -66,7 +89,13 @@ export default function NavigationLoader() {
           return;
         }
 
-        setLoading(true);
+        if (pendingTimerRef.current) {
+          clearTimeout(pendingTimerRef.current);
+        }
+        pendingTimerRef.current = setTimeout(() => {
+          setLoading(true);
+          pendingTimerRef.current = null;
+        }, 150);
       } catch {
         // Ignore invalid URLs
       }
@@ -75,6 +104,9 @@ export default function NavigationLoader() {
     document.addEventListener("click", handleClick, { capture: true });
     return () => {
       document.removeEventListener("click", handleClick, { capture: true });
+      if (pendingTimerRef.current) {
+        clearTimeout(pendingTimerRef.current);
+      }
     };
   }, []);
 

@@ -11,7 +11,7 @@ The platform implements a multi-tiered caching topology engineered with **Next.j
 ```mermaid
 flowchart TD
     Client["Client / AI Crawler"] --> L1["Layer 1: CDN & HTTP Edge Cache\n(Cache-Control, Vary: Accept)"]
-    L1 --> L2["Layer 2: Service Worker Cache\n(public/sw.js - portfolio-cache-v2)"]
+    L1 --> L2["Layer 2: Service Worker Cache\n(public/sw.js - portfolio-cache-v3)"]
     L2 --> L3["Layer 3: Next.js Route Segment ISR\n(export const revalidate)"]
     L3 --> L4["Layer 4: Next.js Data Cache\n(unstable_cache, next.tags)"]
     L4 --> L5["Layer 5: Database Connection Pooling\n(global._mongoClientPromise)"]
@@ -147,7 +147,7 @@ flowchart LR
 ### 2.6 Service Worker PWA Cache
 
 - **Path**: [`public/sw.js`](../../public/sw.js)
-- **Active Bucket**: `portfolio-cache-v2`
+- **Active Bucket**: `portfolio-cache-v3`
 - **Strategy Matrix**:
   1. **Root Shell (`/`)**: Network-First with Cache Fallback for offline availability.
   2. **Static Assets**: Stale-While-Revalidate restricted strictly to `/_next/static/*` and static file extensions (`.css`, `.js`, `.woff2`, `.png`, `.svg`).

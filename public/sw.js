@@ -1,7 +1,7 @@
 // Service Worker for Gourab Mondal Portfolio
 // Provides minimal offline caching for static shell, favicons, and core assets with Network-First strategy.
 
-const CACHE_NAME = "portfolio-cache-v2";
+const CACHE_NAME = "portfolio-cache-v3";
 
 const PRECACHE_ASSETS = [
   "/",
@@ -44,6 +44,13 @@ self.addEventListener("fetch", (event) => {
 
   // Only handle GET requests
   if (req.method !== "GET") return;
+
+  // Only intercept same-origin requests. Third-party assets (such as ImageKit CDN,
+  // Google Analytics, GitHub avatars) must bypass the Service Worker so the browser
+  // handles them natively under the document CSP (e.g. img-src) without worker CSP restrictions.
+  if (url.origin !== self.location.origin) {
+    return;
+  }
 
   // Never cache API routes, Studio routes, Blog routes, or Google Analytics telemetry
   if (
@@ -115,7 +122,11 @@ self.addEventListener("fetch", (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
+        .catch(
+          () =>
+            cachedResponse ||
+            new Response("", { status: 504, statusText: "Gateway Timeout" })
+        );
 
       return cachedResponse || fetchPromise;
     })

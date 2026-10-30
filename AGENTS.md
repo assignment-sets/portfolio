@@ -48,7 +48,7 @@ app/                      # App Router
 components/               # Client & server UI components (Navbar, Hero, ThemeToggle, etc.)
 lib/                      # auth-studio, watermark, mongodb, newsletter, blog, rate-limit, accept
 data/portfolio.ts         # Source of truth — pinned repos, skills, experience, education
-public/sw.js              # Vanilla SW (portfolio-cache-v2) — Network-First HTML, SWR assets
+public/sw.js              # Vanilla SW (portfolio-cache-v3) — Network-First HTML, SWR assets
 proxy.ts                  # Next.js 16 Proxy (NOT middleware.ts) — RFC 9110 Accept content negotiation
 docs/                     # In-depth architectural documentation
 ```

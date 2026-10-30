@@ -13,7 +13,7 @@ Personal portfolio and web platform built with **Next.js 16 (App Router)**, **Re
 - **Personal Blog**: MongoDB Atlas full-text search, Shiki syntax highlighting, and invisible cryptographic steganographic watermarking.
 - **Admin Studio (`/studio`)**: Password + WebAuthn Passkeys, 2FA (TOTP), blog editor, watermark verifier, and newsletter dispatch.
 - **Newsletter**: Self-hosted delivery via Gmail SMTP with one-click unsubscribe and Vercel Cron integration.
-- **Offline / PWA**: Native Service Worker (`portfolio-cache-v2`) providing network-first caching and offline support.
+- **Offline / PWA**: Native Service Worker (`portfolio-cache-v3`) providing network-first caching and offline support.
 - **Defensive Security**: Scoped CSP, COOP (`same-origin-allow-popups`), Permissions-Policy, HSTS preload, Sec-Fetch CSRF mitigation, and SSRF guards.
 
 ---

@@ -6,6 +6,7 @@ import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import OfflineNotice from "@/components/OfflineNotice";
 import NavigationLoader from "@/components/NavigationLoader";
 import AnalyticsDelegation from "@/components/AnalyticsDelegation";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -19,7 +20,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://gourabmondal.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   alternates: {
     canonical: "/",
   },
@@ -83,7 +84,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://gourabmondal.vercel.app",
+    url: SITE_URL,
     title: "Gourab Mondal | Full Stack Developer",
     description:
       "B.Tech CS student. Interested mainly in backend and GenAI applications.",
@@ -102,10 +103,10 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "Person",
-      "@id": "https://gourabmondal.vercel.app/#person",
+      "@id": `${SITE_URL}/#person`,
       name: "Gourab Mondal",
       jobTitle: "Full Stack Developer",
-      url: "https://gourabmondal.vercel.app",
+      url: SITE_URL,
       address: {
         "@type": "PostalAddress",
         addressLocality: "Kolkata",
@@ -133,17 +134,17 @@ const jsonLd = {
     },
     {
       "@type": "ProfilePage",
-      "@id": "https://gourabmondal.vercel.app/#webpage",
-      url: "https://gourabmondal.vercel.app",
+      "@id": `${SITE_URL}/#webpage`,
+      url: SITE_URL,
       name: "Gourab Mondal | Full Stack Developer Portfolio",
       isPartOf: {
         "@type": "WebSite",
-        "@id": "https://gourabmondal.vercel.app/#website",
-        url: "https://gourabmondal.vercel.app",
+        "@id": `${SITE_URL}/#website`,
+        url: SITE_URL,
         name: "Gourab Mondal Portfolio",
       },
       mainEntity: {
-        "@id": "https://gourabmondal.vercel.app/#person",
+        "@id": `${SITE_URL}/#person`,
       },
     },
   ],

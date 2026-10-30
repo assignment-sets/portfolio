@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { ObjectId } from "mongodb";
 import nodemailer from "nodemailer";
 import { getDb } from "./mongodb";
+import { SITE_URL } from "./site";
 
 export interface Subscriber {
   _id?: ObjectId;
@@ -230,8 +231,7 @@ export async function dispatchNewsletter({
   // 3. Verify Gmail SMTP Configuration
   const gmailUser = process.env.EMAIL_USER;
   const gmailPass = process.env.EMAIL_PASS;
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://gourabmondal.vercel.app";
+  const siteUrl = SITE_URL;
 
   if (!gmailUser || !gmailPass) {
     await newslettersCollection.updateOne(

@@ -1,5 +1,6 @@
 import { marked } from "marked";
 import { sanitizeBlogHtml } from "./sanitize";
+import { SITE_URL } from "./site";
 
 export interface RenderEmailOptions {
   title: string;
@@ -26,8 +27,8 @@ export async function renderNewsletterEmail(
   const rawBody = await marked.parse(markdownContent);
   const parsedBody = sanitizeBlogHtml(rawBody);
 
-  const fallbackUnsubscribe =
-    unsubscribeUrl || "https://gourabmondal.vercel.app";
+  const fallbackUnsubscribe = unsubscribeUrl || SITE_URL;
+  const siteHost = new URL(SITE_URL).host;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -70,7 +71,7 @@ export async function renderNewsletterEmail(
                     <span style="font-size: 13px; color: #6b7280; margin-left: 8px;">&middot; Newsletter</span>
                   </td>
                   <td align="right">
-                    <a href="https://gourabmondal.vercel.app" target="_blank" style="font-size: 12px; color: #6b7280; text-decoration: none;">gourabmondal.vercel.app</a>
+                    <a href="${SITE_URL}" target="_blank" style="font-size: 12px; color: #6b7280; text-decoration: none;">${escapeHtml(siteHost)}</a>
                   </td>
                 </tr>
               </table>
@@ -105,7 +106,7 @@ export async function renderNewsletterEmail(
             <td style="padding-top: 24px; text-align: center; font-size: 12px; line-height: 1.6; color: #9ca3af;">
               <p style="margin: 0 0 6px 0;">
                 You are receiving this because you subscribed to updates on
-                <a href="https://gourabmondal.vercel.app" style="color: #6b7280; text-decoration: underline;">gourabmondal.vercel.app</a>.
+                <a href="${SITE_URL}" style="color: #6b7280; text-decoration: underline;">${escapeHtml(siteHost)}</a>.
               </p>
               <p style="margin: 0;">
                 <a href="${fallbackUnsubscribe}" style="color: #6b7280; text-decoration: underline;">Unsubscribe with one click</a>

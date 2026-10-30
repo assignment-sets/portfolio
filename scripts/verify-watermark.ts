@@ -9,7 +9,12 @@ import { verifyTextWatermark, decodeZeroWidth } from "../lib/watermark";
  */
 async function main() {
   const args = process.argv.slice(2);
-  const secret = process.env.STUDIO_SECRET || "portfolio-salt";
+  const secret = process.env.WATERMARK_SECRET || process.env.STUDIO_SECRET;
+
+  if (!secret) {
+    console.error("Error: WATERMARK_SECRET or STUDIO_SECRET environment variable is required.");
+    process.exit(1);
+  }
 
   if (args.length === 0) {
     console.log("Usage:");

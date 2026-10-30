@@ -27,7 +27,28 @@ export default function ThemeToggle() {
     };
 
     mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
+
+    // 3. Sync theme across multiple tabs in real-time
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "theme") {
+        const newTheme = e.newValue;
+        if (newTheme === "light" || newTheme === "dark") {
+          document.documentElement.setAttribute("data-theme", newTheme);
+        } else if (!newTheme) {
+          const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.setAttribute(
+            "data-theme",
+            isDark ? "dark" : "light"
+          );
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   const toggleTheme = () => {

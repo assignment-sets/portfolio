@@ -13,6 +13,7 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#f4f4f0" },
     { media: "(prefers-color-scheme: dark)", color: "#161616" },
   ],
+  colorScheme: "light dark",
   width: "device-width",
   initialScale: 1,
 };
@@ -157,6 +158,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         <ThemeInitScript />
+        <link rel="preconnect" href="https://ik.imagekit.io" />
+        <link rel="dns-prefetch" href="https://ik.imagekit.io" />
         <link
           rel="alternate"
           type="text/plain"

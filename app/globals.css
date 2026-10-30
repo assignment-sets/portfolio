@@ -5,6 +5,7 @@
 }
 
 :root {
+  color-scheme: light;
   --bg: #f4f4f0;
   --bg-soft: #eaeae4;
   --border: #deded8;
@@ -21,6 +22,7 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --bg: #161616;
   --bg-soft: #1e1e1e;
   --border: #2e2e2e;
@@ -39,6 +41,7 @@
 /* Native OS dark mode fallback (ensures 404 and SSR render dark immediately if OS is dark) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #161616;
     --bg-soft: #1e1e1e;
     --border: #2e2e2e;

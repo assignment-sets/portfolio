@@ -5,7 +5,7 @@
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   --bg: #f4f4f0;
   --bg-soft: #eaeae4;
   --border: #deded8;
@@ -19,6 +19,10 @@
   --input-bg: #fafaf7;
   --tag-bg: #eaeae4;
   --overlay-bg: rgba(244, 244, 240, 0.88);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
 }
 
 [data-theme="dark"] {

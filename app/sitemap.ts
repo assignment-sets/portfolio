@@ -1,12 +1,14 @@
 import type { MetadataRoute } from "next";
-import { getCachedPublishedBlogSlugs } from "@/lib/blog";
+import { getCachedPublishedBlogSitemapEntries } from "@/lib/blog";
 import { SITE_URL } from "@/lib/site";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const blogSlugs = await getCachedPublishedBlogSlugs().catch(() => []);
-  const blogUrls: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
-    url: `${SITE_URL}/blog/${slug}`,
-    lastModified: new Date(),
+  const blogEntries = await getCachedPublishedBlogSitemapEntries().catch(() => []);
+  const blogUrls: MetadataRoute.Sitemap = blogEntries.map((post) => ({
+    url: `${SITE_URL}/blog/${post.slug}`,
+    lastModified: post.lastModified,
     changeFrequency: "weekly" as const,
     priority: 0.7,
   }));

@@ -80,6 +80,35 @@ export async function getPublishedBlogSlugs(): Promise<string[]> {
   }
 }
 
+export interface BlogSitemapEntry {
+  slug: string;
+  lastModified: Date;
+}
+
+/**
+ * Retrieves published blog posts with accurate timestamps for dynamic XML sitemaps.
+ */
+export async function getPublishedBlogSitemapEntries(): Promise<BlogSitemapEntry[]> {
+  try {
+    const collection = await getBlogsCollection();
+    const docs = await collection
+      .find(
+        { status: "published" },
+        { projection: { slug: 1, updatedAt: 1, publishedAt: 1, createdAt: 1 } }
+      )
+      .toArray();
+
+    return docs
+      .filter((d) => Boolean(d.slug))
+      .map((d) => ({
+        slug: d.slug,
+        lastModified: new Date(d.updatedAt || d.publishedAt || d.createdAt || Date.now()),
+      }));
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Cached version of getPublishedBlogSlugs with 24-hour fallback TTL.
  */
@@ -88,6 +117,18 @@ export const getCachedPublishedBlogSlugs = unstable_cache(
   ["published-blog-slugs"],
   {
     tags: ["blogs", "blog-slugs"],
+    revalidate: 86400,
+  }
+);
+
+/**
+ * Cached version of getPublishedBlogSitemapEntries with on-demand invalidation.
+ */
+export const getCachedPublishedBlogSitemapEntries = unstable_cache(
+  async () => getPublishedBlogSitemapEntries(),
+  ["published-blog-sitemap-entries"],
+  {
+    tags: ["blogs", "blog-slugs", "sitemap"],
     revalidate: 86400,
   }
 );

@@ -178,6 +178,8 @@ export async function POST(req: NextRequest) {
       // Synchronously invalidate edge cache and sitemap
       try {
         revalidateTag("blogs", "max");
+        revalidateTag("blog-slugs", "max");
+        revalidateTag("sitemap", "max");
         revalidatePath("/blog");
         if (existing.slug) {
           revalidatePath(`/blog/${existing.slug}`);
@@ -276,6 +278,8 @@ export async function POST(req: NextRequest) {
         // Synchronously invalidate edge cache and sitemap
         try {
           revalidateTag("blogs", "max");
+          revalidateTag("blog-slugs", "max");
+          revalidateTag("sitemap", "max");
           revalidatePath("/blog");
           revalidatePath(`/blog/${finalSlug}`);
           if (existing?.slug && existing.slug !== finalSlug) {
@@ -316,6 +320,8 @@ export async function POST(req: NextRequest) {
       // Synchronously invalidate edge cache and sitemap
       try {
         revalidateTag("blogs", "max");
+        revalidateTag("blog-slugs", "max");
+        revalidateTag("sitemap", "max");
         revalidatePath("/blog");
         revalidatePath(`/blog/${finalSlug}`);
         revalidatePath("/sitemap.xml");

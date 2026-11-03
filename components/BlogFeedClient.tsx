@@ -3,11 +3,16 @@
 import { useState, useEffect, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Search, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import BlogSearchBar from "@/components/BlogSearchBar";
 import BlogCardLink from "@/components/BlogCardLink";
 import type { PaginatedBlogPosts } from "@/lib/blog";
-import { formatBlogDate, toIsoDateString } from "@/lib/blog-utils";
+import {
+  formatBlogDate,
+  toIsoDateString,
+  DEFAULT_BLOG_COVER_IMAGE,
+} from "@/lib/blog-utils";
 
 interface BlogFeedClientProps {
   initialData: PaginatedBlogPosts;
@@ -153,51 +158,83 @@ export default function BlogFeedClient({ initialData }: BlogFeedClientProps) {
                 post.publishedAt || post.createdAt
               );
 
+              const coverUrl = post.coverImage || DEFAULT_BLOG_COVER_IMAGE;
+
               return (
                 <article key={post.slug} className="blog-card">
-                  <div className="blog-card-meta">
-                    <time dateTime={isoDate}>{formattedDate}</time>
-                    <span className="blog-card-dot">&middot;</span>
-                    <span>{post.readingTimeMinutes || 1} min read</span>
-                  </div>
+                  <div className="blog-card-inner">
+                    {coverUrl && (
+                      <div className="blog-card-thumb-col">
+                        <BlogCardLink
+                          href={`/blog/${post.slug}`}
+                          title={post.title}
+                          slug={post.slug}
+                          location="card_title"
+                          className="blog-card-thumb-link"
+                        >
+                          <div className="blog-card-thumb-wrap">
+                            <Image
+                              src={coverUrl}
+                              alt={post.title}
+                              fill
+                              sizes="(max-width: 640px) 100vw, 200px"
+                              className="blog-card-thumb-img"
+                              loading="lazy"
+                              unoptimized={
+                                !coverUrl.startsWith("https://ik.imagekit.io/")
+                              }
+                            />
+                          </div>
+                        </BlogCardLink>
+                      </div>
+                    )}
 
-                  <h2 className="blog-card-title">
-                    <BlogCardLink
-                      href={`/blog/${post.slug}`}
-                      title={post.title}
-                      slug={post.slug}
-                      location="card_title"
-                      className="blog-card-link"
-                    >
-                      {post.title}
-                    </BlogCardLink>
-                  </h2>
+                    <div className="blog-card-body">
+                      <div className="blog-card-meta">
+                        <time dateTime={isoDate}>{formattedDate}</time>
+                        <span className="blog-card-dot">&middot;</span>
+                        <span>{post.readingTimeMinutes || 1} min read</span>
+                      </div>
 
-                  {post.description && (
-                    <p className="blog-card-excerpt">{post.description}</p>
-                  )}
+                      <h2 className="blog-card-title">
+                        <BlogCardLink
+                          href={`/blog/${post.slug}`}
+                          title={post.title}
+                          slug={post.slug}
+                          location="card_title"
+                          className="blog-card-link"
+                        >
+                          {post.title}
+                        </BlogCardLink>
+                      </h2>
 
-                  {post.tags && post.tags.length > 0 && (
-                    <div className="blog-card-tags">
-                      {post.tags.map((tag) => (
-                        <span key={tag} className="blog-tag">
-                          {tag}
-                        </span>
-                      ))}
+                      {post.description && (
+                        <p className="blog-card-excerpt">{post.description}</p>
+                      )}
+
+                      <div className="blog-card-bottom-row">
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="blog-card-tags">
+                            {post.tags.map((tag) => (
+                              <span key={tag} className="blog-tag">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <BlogCardLink
+                          href={`/blog/${post.slug}`}
+                          title={post.title}
+                          slug={post.slug}
+                          location="read_more"
+                          className="blog-read-more"
+                        >
+                          <span>Read article</span>
+                          <ArrowRight size={13} />
+                        </BlogCardLink>
+                      </div>
                     </div>
-                  )}
-
-                  <div className="blog-card-footer">
-                    <BlogCardLink
-                      href={`/blog/${post.slug}`}
-                      title={post.title}
-                      slug={post.slug}
-                      location="read_more"
-                      className="blog-read-more"
-                    >
-                      <span>Read article</span>
-                      <ArrowRight size={13} />
-                    </BlogCardLink>
                   </div>
                 </article>
               );

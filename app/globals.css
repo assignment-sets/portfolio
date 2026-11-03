@@ -2301,12 +2301,75 @@ footer {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 22px 26px;
+  padding: 18px 22px;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
 .blog-card:hover {
   border-color: var(--border-strong);
+}
+
+.blog-card-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.blog-card-thumb-col {
+  width: 100%;
+}
+
+.blog-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.blog-card-thumb-link {
+  display: block;
+  text-decoration: none;
+}
+
+.blog-card-thumb-wrap {
+  width: 100%;
+  height: 160px;
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+.blog-card-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.25s ease;
+}
+
+.blog-card:hover .blog-card-thumb-img {
+  transform: scale(1.03);
+}
+
+@media (min-width: 640px) {
+  .blog-card-inner {
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .blog-card-thumb-col {
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  .blog-card-thumb-wrap {
+    width: 190px;
+    height: 115px;
+  }
 }
 
 .blog-card-meta {
@@ -2315,7 +2378,7 @@ footer {
   gap: 8px;
   font-size: 0.78rem;
   color: var(--text-dim);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .blog-card-dot {
@@ -2323,14 +2386,14 @@ footer {
 }
 
 .blog-card-title {
-  font-size: 1.22rem;
+  font-size: 1.18rem;
   font-family: inherit;
   font-weight: 600;
   letter-spacing: -0.01em;
   text-transform: none;
   border-bottom: none;
   padding-bottom: 0;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   line-height: 1.35;
 }
 
@@ -2345,10 +2408,23 @@ footer {
 }
 
 .blog-card-excerpt {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--text-mid);
-  line-height: 1.55;
-  margin: 0 0 14px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.blog-card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 4px;
+  flex-wrap: wrap;
 }
 
 .blog-card-tags,
@@ -2356,7 +2432,7 @@ footer {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 14px;
+  margin-bottom: 0;
 }
 
 .blog-tag {
@@ -2381,6 +2457,9 @@ footer {
   font-weight: 500;
   color: var(--text);
   text-decoration: none;
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: gap 0.15s ease, color 0.15s ease;
 }
 

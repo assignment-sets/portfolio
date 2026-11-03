@@ -1,6 +1,9 @@
 /**
- * Client-safe pure date and string utilities for blog components.
+ * Client-safe pure date, image, and string utilities for blog components.
  */
+
+export const DEFAULT_BLOG_COVER_IMAGE =
+  "https://ik.imagekit.io/grbmndlassts/default-blog-cover-panoramic.jpg";
 
 /**
  * Safely converts Date | string | null to an ISO-8601 string.

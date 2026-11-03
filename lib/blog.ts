@@ -2,9 +2,9 @@ import { ObjectId } from "mongodb";
 import { unstable_cache } from "next/cache";
 import { getDb } from "./mongodb";
 import { compileBlogMarkdown } from "./blog-markdown";
+import { DEFAULT_BLOG_COVER_IMAGE } from "./blog-utils";
 
-export const DEFAULT_BLOG_COVER_IMAGE =
-  "https://ik.imagekit.io/grbmndlassts/default-blog-cover-panoramic.jpg";
+export { DEFAULT_BLOG_COVER_IMAGE };
 
 export interface BlogPost {
   _id?: ObjectId | string;

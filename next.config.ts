@@ -6,7 +6,7 @@ const ContentSecurityPolicy = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https://ik.imagekit.io https://avatars.githubusercontent.com https://www.google-analytics.com https://www.googletagmanager.com;
+  img-src 'self' blob: data: https://ik.imagekit.io https://avatars.githubusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://scorebadge.com;
   font-src 'self' data:;
   connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://api.github.com;
   object-src 'none';

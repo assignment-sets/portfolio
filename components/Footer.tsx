@@ -246,7 +246,27 @@ export default function Footer({
 
         {/* Sub-Footer Row */}
         <div className="footer-bottom">
-          <span>&copy; 2026 {portfolioData.name}. All rights reserved.</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            <span>&copy; 2026 {portfolioData.name}. All rights reserved.</span>
+            <a
+              href="https://scorebadge.com/site/gourabmondal.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="gourabmondal.vercel.app website score on scorebadge"
+              style={{ display: "inline-flex", alignItems: "center" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://scorebadge.com/badge/gourabmondal.vercel.app.svg"
+                alt="gourabmondal.vercel.app website score on scorebadge"
+                height="22"
+                width="auto"
+                loading="lazy"
+                decoding="async"
+                style={{ height: "22px", width: "auto" }}
+              />
+            </a>
+          </div>
           <BackToTopButton />
         </div>
       </div>

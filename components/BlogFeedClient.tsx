@@ -4,12 +4,13 @@ import { useState, useEffect, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { Search, ArrowLeft, ArrowRight, Loader2, Eye } from "lucide-react";
 import BlogSearchBar from "@/components/BlogSearchBar";
 import BlogCardLink from "@/components/BlogCardLink";
 import type { PaginatedBlogPosts } from "@/lib/blog";
 import {
   formatBlogDate,
+  formatViewCount,
   toIsoDateString,
   DEFAULT_BLOG_COVER_IMAGE,
 } from "@/lib/blog-utils";
@@ -82,6 +83,31 @@ export default function BlogFeedClient({ initialData }: BlogFeedClientProps) {
 
   const activeFeed = isDefaultFeed ? initialData : feedData;
   const { posts, total, totalPages, hasNextPage, hasPrevPage } = activeFeed;
+  const [liveViews, setLiveViews] = useState<Record<string, number>>({});
+
+  // Hydrate live view counts so ISR-cached feed cards always reflect recent views
+  const slugsKey = posts.map((p) => p.slug).join(",");
+  useEffect(() => {
+    if (!slugsKey) return;
+    let isCancelled = false;
+
+    fetch(`/api/blog/views?slugs=${encodeURIComponent(slugsKey)}`, {
+      cache: "no-store",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isCancelled && data?.success && data.views) {
+          setLiveViews(data.views);
+        }
+      })
+      .catch(() => {
+        // Keep SSR/API cached view counts on error
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [slugsKey]);
 
   const buildPaginationUrl = (pageNumber: number) => {
     const params = new URLSearchParams();
@@ -194,6 +220,11 @@ export default function BlogFeedClient({ initialData }: BlogFeedClientProps) {
                         <time dateTime={isoDate}>{formattedDate}</time>
                         <span className="blog-card-dot">&middot;</span>
                         <span>{post.readingTimeMinutes || 1} min read</span>
+                        <span className="blog-card-dot">&middot;</span>
+                        <span className="blog-card-views">
+                          <Eye size={12} aria-hidden="true" />
+                          <span>{formatViewCount(liveViews[post.slug] ?? post.views ?? 0)}</span>
+                        </span>
                       </div>
 
                       <h2 className="blog-card-title">

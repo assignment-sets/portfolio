@@ -310,6 +310,7 @@ export async function POST(req: NextRequest) {
         tags: parsedTags,
         coverImage: coverImage || "",
         readingTimeMinutes,
+        views: 0,
         publishedAt: isPublish ? new Date() : undefined,
         createdAt: new Date(),
         updatedAt: new Date(),

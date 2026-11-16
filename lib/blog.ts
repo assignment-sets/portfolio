@@ -17,6 +17,7 @@ export interface BlogPost {
   tags: string[];
   coverImage?: string;
   readingTimeMinutes: number;
+  views?: number;
   publishedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -380,4 +381,46 @@ export async function getCachedPublishedBlogPosts(options?: {
   const tag = options?.tag?.trim() || undefined;
 
   return getCachedPublishedBlogPostsInternal(page, limit, tag);
+}
+
+/**
+ * Atomically increments the view count for a published blog post by slug.
+ * Returns the updated view count, or null if no matching published post exists.
+ */
+export async function incrementBlogPostViews(slug: string): Promise<number | null> {
+  const collection = await getBlogsCollection();
+  const updated = await collection.findOneAndUpdate(
+    { slug, status: "published" },
+    { $inc: { views: 1 } },
+    {
+      returnDocument: "after",
+      projection: { views: 1 },
+    }
+  );
+  if (!updated) return null;
+  return updated.views ?? 1;
+}
+
+/**
+ * Retrieves current view counts for a list of published blog slugs.
+ */
+export async function getBlogViewsBySlugs(
+  slugs: string[]
+): Promise<Record<string, number>> {
+  if (slugs.length === 0) return {};
+  const collection = await getBlogsCollection();
+  const docs = await collection
+    .find(
+      { slug: { $in: slugs }, status: "published" },
+      { projection: { slug: 1, views: 1 } }
+    )
+    .toArray();
+
+  const viewsBySlug: Record<string, number> = {};
+  for (const doc of docs) {
+    if (doc.slug) {
+      viewsBySlug[doc.slug] = doc.views ?? 0;
+    }
+  }
+  return viewsBySlug;
 }

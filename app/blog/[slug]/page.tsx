@@ -8,6 +8,7 @@ import BlogShareButton from "@/components/BlogShareButton";
 import BlogEditButton from "@/components/BlogEditButton";
 import BlogContentEnhancer from "@/components/BlogContentEnhancer";
 import BlogMarkdownActions from "@/components/BlogMarkdownActions";
+import BlogViewCount from "@/components/BlogViewCount";
 import {
   getCachedBlogPostBySlug,
   getPublishedBlogSlugs,
@@ -234,6 +235,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <Clock size={14} />
                 <span>{post.readingTimeMinutes || 1} min read</span>
               </div>
+
+              <span className="blog-meta-sep">&middot;</span>
+
+              <BlogViewCount slug={post.slug} initialViews={post.views ?? 0} />
             </div>
 
             {post.tags && post.tags.length > 0 && (

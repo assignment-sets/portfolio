@@ -30,3 +30,11 @@ export function formatBlogDate(
     year: "numeric",
   });
 }
+
+/**
+ * Formats a blog view count into a human-readable label.
+ */
+export function formatViewCount(views: number = 0): string {
+  const safeViews = Number.isFinite(views) && views > 0 ? Math.floor(views) : 0;
+  return `${safeViews.toLocaleString("en-US")} ${safeViews === 1 ? "view" : "views"}`;
+}

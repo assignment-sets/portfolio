@@ -2375,10 +2375,17 @@ footer {
 .blog-card-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   font-size: 0.78rem;
   color: var(--text-dim);
   margin-bottom: 6px;
+}
+
+.blog-card-views {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .blog-card-dot {
@@ -2904,6 +2911,7 @@ footer {
 .blog-meta-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   font-size: 0.85rem;
   color: var(--text-dim);

@@ -46,11 +46,28 @@ function BlogFeedFallback() {
   );
 }
 
-export default async function BlogIndexPage() {
+interface BlogIndexPageProps {
+  searchParams: Promise<{
+    page?: string;
+    tag?: string;
+    q?: string;
+  }>;
+}
+
+export default async function BlogIndexPage({
+  searchParams,
+}: BlogIndexPageProps) {
+  const resolvedParams = await searchParams;
+  const page = Math.max(1, parseInt(resolvedParams?.page || "1", 10) || 1);
+  const tag = resolvedParams?.tag?.trim() || undefined;
+  const query = resolvedParams?.q?.trim() || undefined;
+
   const [data, projects] = await Promise.all([
     getCachedPublishedBlogPosts({
-      page: 1,
+      page,
       limit: 10,
+      tag,
+      query,
     }),
     getFeaturedProjects(),
   ]);

@@ -424,3 +424,135 @@ export async function getBlogViewsBySlugs(
   }
   return viewsBySlug;
 }
+
+export interface BlogPostSummary {
+  _id?: string;
+  title: string;
+  slug: string;
+  description?: string;
+  tags: string[];
+  readingTimeMinutes: number;
+  publishedAt?: Date;
+  createdAt: Date;
+}
+
+const SUMMARY_PROJECTION = {
+  _id: 1,
+  title: 1,
+  slug: 1,
+  description: 1,
+  tags: 1,
+  readingTimeMinutes: 1,
+  publishedAt: 1,
+  createdAt: 1,
+} as const;
+
+function toSummary(doc: BlogPost): BlogPostSummary {
+  return {
+    _id: doc._id?.toString(),
+    title: doc.title,
+    slug: doc.slug,
+    description: doc.description,
+    tags: doc.tags || [],
+    readingTimeMinutes: doc.readingTimeMinutes || 1,
+    publishedAt: doc.publishedAt ? new Date(doc.publishedAt) : undefined,
+    createdAt: new Date(doc.createdAt),
+  };
+}
+
+/**
+ * Retrieves up to `limit` published posts related to `currentSlug` by shared tags,
+ * backfilling with the latest published posts if fewer than `limit` tag matches exist.
+ */
+export async function getRelatedBlogPosts(
+  currentSlug: string,
+  tags: string[] = [],
+  limit: number = 2
+): Promise<BlogPostSummary[]> {
+  try {
+    const collection = await getBlogsCollection();
+    const normalizedTags = tags.map((t) => t.trim()).filter(Boolean);
+    const results: BlogPostSummary[] = [];
+    const seenSlugs = new Set<string>([currentSlug]);
+
+    if (normalizedTags.length > 0) {
+      const tagMatches = await collection
+        .find(
+          {
+            status: "published",
+            slug: { $ne: currentSlug },
+            tags: { $in: normalizedTags },
+          },
+          { projection: SUMMARY_PROJECTION }
+        )
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .limit(limit)
+        .toArray();
+
+      for (const doc of tagMatches) {
+        if (doc.slug && !seenSlugs.has(doc.slug)) {
+          seenSlugs.add(doc.slug);
+          results.push(toSummary(doc));
+        }
+      }
+    }
+
+    if (results.length < limit) {
+      const remaining = limit - results.length;
+      const fallback = await collection
+        .find(
+          {
+            status: "published",
+            slug: { $nin: Array.from(seenSlugs) },
+          },
+          { projection: SUMMARY_PROJECTION }
+        )
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .limit(remaining)
+        .toArray();
+
+      for (const doc of fallback) {
+        if (doc.slug && !seenSlugs.has(doc.slug)) {
+          seenSlugs.add(doc.slug);
+          results.push(toSummary(doc));
+        }
+      }
+    }
+
+    return results;
+  } catch {
+    return [];
+  }
+}
+
+const getCachedRelatedBlogPostsInternal = unstable_cache(
+  async (
+    currentSlug: string,
+    tagsKey: string,
+    limit: number
+  ): Promise<BlogPostSummary[]> => {
+    const tags = tagsKey ? tagsKey.split("\u0000").filter(Boolean) : [];
+    return getRelatedBlogPosts(currentSlug, tags, limit);
+  },
+  ["related-blog-posts"],
+  {
+    tags: ["blogs", "blog-feed"],
+    revalidate: 3600,
+  }
+);
+
+/**
+ * Cached version of getRelatedBlogPosts with on-demand tag invalidation.
+ */
+export async function getCachedRelatedBlogPosts(
+  currentSlug: string,
+  tags: string[] = [],
+  limit: number = 2
+): Promise<BlogPostSummary[]> {
+  const tagsKey = [...tags]
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .sort()
+    .join("\u0000");
+  return getCachedRelatedBlogPostsInternal(currentSlug, tagsKey, limit);
+}

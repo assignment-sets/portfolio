@@ -9,8 +9,10 @@ import BlogEditButton from "@/components/BlogEditButton";
 import BlogContentEnhancer from "@/components/BlogContentEnhancer";
 import BlogMarkdownActions from "@/components/BlogMarkdownActions";
 import BlogViewCount from "@/components/BlogViewCount";
+import RelatedBlogs from "@/components/RelatedBlogs";
 import {
   getCachedBlogPostBySlug,
+  getCachedRelatedBlogPosts,
   getPublishedBlogSlugs,
   formatBlogDate,
   toIsoDateString,
@@ -92,7 +94,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
-  const projects = await getFeaturedProjects();
+  const [projects, relatedPosts] = await Promise.all([
+    getFeaturedProjects(),
+    getCachedRelatedBlogPosts(post.slug, post.tags || [], 2),
+  ]);
 
   const formattedDate = formatBlogDate(post.publishedAt || post.createdAt, "long");
   const isoDate = toIsoDateString(post.publishedAt || post.createdAt);
@@ -282,6 +287,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               variant="footer"
             />
           </div>
+
+          <RelatedBlogs posts={relatedPosts} />
         </article>
       </main>
       <Footer projects={projects} />

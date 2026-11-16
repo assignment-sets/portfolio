@@ -2720,6 +2720,30 @@ footer {
   border-color: var(--text);
 }
 
+@media (max-width: 600px) {
+  .blog-article-footer-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .blog-markdown-actions-footer {
+    display: contents;
+  }
+
+  .blog-action-footer-btn,
+  .blog-share-footer-btn {
+    justify-content: center;
+    padding: 10px;
+    width: 100%;
+  }
+
+  .blog-action-footer-btn span,
+  .blog-share-footer-btn span {
+    display: none;
+  }
+}
+
 /* ── Blog Share Modal ── */
 .blog-share-backdrop {
   position: fixed;

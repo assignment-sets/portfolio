@@ -224,6 +224,8 @@ export default function BlogShareButton({
           type="button"
           onClick={handleOpenModal}
           className="blog-share-footer-btn"
+          title="Share this article"
+          aria-label="Share this article"
         >
           <Share2 size={15} />
           <span>Share this article</span>

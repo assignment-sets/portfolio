@@ -10,10 +10,17 @@ const slugSchema = z
   .regex(/^[a-z0-9-]+$/i, "Invalid blog slug");
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    if (req.headers.get("sec-fetch-site") === "cross-site") {
+      return NextResponse.json(
+        { error: "Cross-site requests are forbidden." },
+        { status: 403 }
+      );
+    }
+
     const { slug } = await context.params;
     const parsed = slugSchema.safeParse(slug);
     if (!parsed.success) {
